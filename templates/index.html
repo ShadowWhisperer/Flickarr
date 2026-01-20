@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Flickarr - TMDB Movie List Generator</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <!-- Main Screen -->
+        <div id="main-screen">
+            <h1>🎬 Flickarr - TMDB Movie List Generator</h1>
+            
+            <div class="feed-url">
+                <strong><span id="lastUpdated">Never</span></strong>
+                <code id="masterUrl"></code>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <button class="btn-new" onclick="showFormScreen()">+ New List</button>
+                    <button class="btn-test" onclick="testAPI()">Test API</button>
+                    <button class="btn-refresh" onclick="refreshCache()">Refresh Cache</button>
+                    <span id="apiStatus"></span>
+                </div>
+                <div>
+                    <button class="btn-backup" onclick="backupData()">Backup</button>
+                    <button class="btn-restore" onclick="document.getElementById('restoreFile').click()">Restore</button>
+                    <input type="file" id="restoreFile" accept=".json" style="display: none;" onchange="restoreData(event)">
+                </div>
+            </div>
+
+            <div class="saved-lists">
+                <h2>Saved Lists</h2>
+                <div id="listContainer"></div>
+            </div>
+        </div>
+
+        <!-- Form Screen -->
+        <div id="form-screen">
+            <button class="back-button" onclick="showMainScreen()">← Back</button>
+
+            <form id="listForm">
+                <input type="hidden" id="editingListId" value="">
+                
+                <div class="form-row">
+                    <label for="listName">List Name:</label>
+                    <input type="text" id="listName" name="listName" required>
+                </div>
+
+                <div class="form-row">
+                    <label>Min Rating:</label>
+                    <div class="two-inputs">
+                        <input type="number" id="minRating" name="minRating" min="0" max="10" step="0.1" placeholder="Min rating">
+                        <input type="number" id="minVotes" name="minVotes" min="0" placeholder="Minimum number of votes">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <label>Year Between:</label>
+                    <div class="two-inputs">
+                        <input type="number" id="yearFrom" name="yearFrom" min="1900" max="2030" placeholder="From">
+                        <input type="number" id="yearTo" name="yearTo" min="1900" max="2030" placeholder="To">
+                    </div>
+                </div>
+
+                <div class="language-section">
+                    <label>Languages:</label>
+                    <div class="language-buttons" id="languageButtons"></div>
+                </div>
+
+                <div class="genre-section">
+                    <label>Include Genre</label>
+                    <div class="genre-buttons" id="includeGenres"></div>
+                </div>
+
+                <div class="genre-section">
+                    <label>Exclude Genre</label>
+                    <div class="genre-buttons" id="excludeGenres"></div>
+                </div>
+
+                <div class="form-row">
+                    <label for="titleTerms">Key Words:</label>
+                    <input type="text" id="titleTerms" name="titleTerms" placeholder="Search for words in movie titles (e.g., Scooby)">
+                </div>
+
+                <div class="form-row">
+                    <label for="titleExclude">Title Exclude:</label>
+                    <input type="text" id="titleExclude" name="titleExclude" placeholder="Exclude titles containing these words (comma separated, e.g., Lego, WWE)">
+                </div>
+
+                <div class="actor-section">
+                    <label>Studios/Companies:</label>
+                    <div class="actor-tags" id="selectedStudios"></div>
+                    <div class="autocomplete">
+                        <input type="text" id="studioSearch" placeholder="Search for studios or production companies...">
+                        <div id="studio-autocomplete-list" class="autocomplete-items"></div>
+                    </div>
+                </div>
+
+                <div class="actor-section">
+                    <label>Include Actors or Crew:</label>
+                    <div class="actor-tags" id="selectedActors"></div>
+                    <div class="autocomplete">
+                        <input type="text" id="actorSearch" placeholder="Search for actors or crew...">
+                        <div id="autocomplete-list" class="autocomplete-items"></div>
+                    </div>
+                </div>
+
+                <div class="actor-section">
+                    <label>Exclude Actors or Crew:</label>
+                    <div class="actor-tags" id="excludedActors"></div>
+                    <div class="autocomplete">
+                        <input type="text" id="excludeActorSearch" placeholder="Search for actors or crew to exclude...">
+                        <div id="exclude-autocomplete-list" class="autocomplete-items"></div>
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button type="submit" id="submitBtn">Save</button>
+                    <button type="button" class="btn-preview" onclick="previewList()">Preview List</button>
+                    <span class="preview-count" id="previewCount"></span>
+                    <span class="preview-status" id="previewStatus"></span>
+                </div>
+            </form>
+
+            <div class="preview-results" id="previewResults" style="display: none;">
+                <div id="previewList"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Pass default languages from backend to frontend
+        const DEFAULT_LANGUAGES = {{ default_languages | tojson }};
+    </script>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
