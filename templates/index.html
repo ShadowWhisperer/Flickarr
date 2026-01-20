@@ -22,11 +22,6 @@
                     <button class="btn-refresh" onclick="refreshCache()">Refresh Cache</button>
                     <span id="apiStatus"></span>
                 </div>
-                <div>
-                    <button class="btn-backup" onclick="backupData()">Backup</button>
-                    <button class="btn-restore" onclick="document.getElementById('restoreFile').click()">Restore</button>
-                    <input type="file" id="restoreFile" accept=".json" style="display: none;" onchange="restoreData(event)">
-                </div>
             </div>
 
             <div class="saved-lists">
@@ -35,7 +30,6 @@
             </div>
         </div>
 
-        <!-- Form Screen -->
         <div id="form-screen">
             <button class="back-button" onclick="showMainScreen()">← Back</button>
 
@@ -130,7 +124,6 @@
     </div>
 
     <script>
-        // Pass default languages from backend to frontend
         const DEFAULT_LANGUAGES = {{ default_languages | tojson }};
     </script>
     <script src="{{ url_for('static', filename='script.js') }}"></script>
