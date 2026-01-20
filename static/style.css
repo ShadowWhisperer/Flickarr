@@ -278,15 +278,6 @@ button {
     margin-left: 10px;
 }
 
-.btn-backup {
-    background-color: #607D8B;
-}
-
-.btn-restore {
-    background-color: #795548;
-    margin-left: 10px;
-}
-
 .preview-count {
     display: inline-block;
     margin-left: 10px;
