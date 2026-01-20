@@ -1,3 +1,9 @@
+#### This is in BETA. I do not recommend to try it yet. #####  
+
+
+
+
+
 A web application that generates custom movie lists from The Movie Database (TMDB) API, for use with Radarr.  
 Create filtered lists based on genres, ratings, release years, actors, studios, languages.  
 
