@@ -21,25 +21,9 @@ const genres = [
     {id: '37', name: 'Western'}
 ];
 
-const languages = [
-    {code: 'en', name: 'English'},
-    {code: 'es', name: 'Spanish'},
-    {code: 'fr', name: 'French'},
-    {code: 'de', name: 'German'},
-    {code: 'it', name: 'Italian'},
-    {code: 'ja', name: 'Japanese'},
-    {code: 'ko', name: 'Korean'},
-    {code: 'zh', name: 'Chinese'},
-    {code: 'pt', name: 'Portuguese'},
-    {code: 'ru', name: 'Russian'},
-    {code: 'hi', name: 'Hindi'},
-    {code: 'ar', name: 'Arabic'}
-];
-
 let selectedActors = [];
 let excludedActors = [];
 let selectedStudios = [];
-let selectedLanguages = DEFAULT_LANGUAGES || ['en'];  // Use default from backend
 let searchTimeout;
 
 // Initialize
@@ -127,35 +111,6 @@ async function refreshCache() {
             statusEl.textContent = '';
             statusEl.className = '';
         }, 5000);
-    }
-}
-
-// Initialize language buttons
-function initLanguageButtons() {
-    const container = document.getElementById('languageButtons');
-    languages.forEach(lang => {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'lang-btn';
-        // Select default languages from backend
-        if (selectedLanguages.includes(lang.code)) {
-            btn.classList.add('selected');
-        }
-        btn.textContent = lang.name;
-        btn.dataset.code = lang.code;
-        btn.onclick = () => toggleLanguage(lang.code);
-        container.appendChild(btn);
-    });
-}
-
-function toggleLanguage(code) {
-    const btn = document.querySelector(`.lang-btn[data-code="${code}"]`);
-    if (selectedLanguages.includes(code)) {
-        selectedLanguages = selectedLanguages.filter(c => c !== code);
-        btn.classList.remove('selected');
-    } else {
-        selectedLanguages.push(code);
-        btn.classList.add('selected');
     }
 }
 
@@ -375,7 +330,6 @@ document.getElementById('listForm').addEventListener('submit', async function(e)
         minVotes: parseInt(document.getElementById('minVotes').value) || null,
         yearFrom: parseInt(document.getElementById('yearFrom').value) || null,
         yearTo: parseInt(document.getElementById('yearTo').value) || null,
-        languages: selectedLanguages,
         includeGenres: includeGenres,
         excludeGenres: excludeGenres,
         titleTerms: document.getElementById('titleTerms').value,
@@ -421,7 +375,6 @@ async function previewList() {
         minVotes: parseInt(document.getElementById('minVotes').value) || null,
         yearFrom: parseInt(document.getElementById('yearFrom').value) || null,
         yearTo: parseInt(document.getElementById('yearTo').value) || null,
-        languages: selectedLanguages,
         includeGenres: includeGenres,
         excludeGenres: excludeGenres,
         titleTerms: document.getElementById('titleTerms').value,
@@ -498,17 +451,8 @@ function resetForm() {
     selectedActors = [];
     excludedActors = [];
     selectedStudios = [];
-    selectedLanguages = DEFAULT_LANGUAGES || ['en'];  // Reset to default
     renderActors();
     renderStudios();
-    
-    // Reset language buttons
-    document.querySelectorAll('.lang-btn').forEach(btn => {
-        btn.classList.remove('selected');
-        if (selectedLanguages.includes(btn.dataset.code)) {
-            btn.classList.add('selected');
-        }
-    });
     
     document.querySelectorAll('.genre-btn').forEach(btn => {
         btn.classList.remove('included', 'excluded');
@@ -602,17 +546,8 @@ async function editList(id) {
     selectedActors = list.actors || [];
     excludedActors = list.excludeActors || [];
     selectedStudios = list.studios || [];
-    selectedLanguages = list.languages || DEFAULT_LANGUAGES || ['en'];
     renderActors();
     renderStudios();
-    
-    // Update language buttons
-    document.querySelectorAll('.lang-btn').forEach(btn => {
-        btn.classList.remove('selected');
-        if (selectedLanguages.includes(btn.dataset.code)) {
-            btn.classList.add('selected');
-        }
-    });
     
     document.querySelectorAll('.genre-btn').forEach(btn => {
         btn.classList.remove('included', 'excluded');
@@ -630,7 +565,6 @@ async function editList(id) {
 }
 
 // Initialize everything
-initLanguageButtons();
 setupActorAutocomplete('actorSearch', 'autocomplete-list', null, false);
 setupActorAutocomplete('excludeActorSearch', 'exclude-autocomplete-list', null, true);
 setupStudioAutocomplete();
