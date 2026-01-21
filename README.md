@@ -1,4 +1,4 @@
-🚨  This is in BETA. I do not recommend using it yet
+🚨  This is in BETA. I do not recommend using it yet  
 🚨  This was made with help from AI  
 🚨  Do NOT connect this to a reverse proxy. You will have problems.  
 
