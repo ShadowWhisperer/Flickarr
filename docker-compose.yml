@@ -1,14 +1,14 @@
 services:
   flickarr:
-    image: ghcr.io/ShadowWhisperer/flickarr:latest
+    image: ghcr.io/shadowwhisperer/flickarr:latest
     container_name: flickarr
     ports:
       - "5000:5000"
     volumes:
       - ./data:/app/data
     environment:
-      - TMDB_API_KEY=your_api_key  # Replace with your actual TMDB API key
-      - DEFAULT_LANGUAGES=en       # Comma-separated: en,es,fr,de,ja,ko,zh,pt,ru,hi,ar,it
+      - TMDB_API_KEY=your_key  # Replace with your TMDB API key
+      - DEFAULT_LANGUAGES=en   # Comma-separated: en,es,fr,de,ja,ko,zh,pt,ru,hi,ar,i
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:5000/', timeout=5)"]
