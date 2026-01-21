@@ -522,44 +522,6 @@ def get_list_count(list_id):
     count = len(movie_cache.get(list_id, []))
     return jsonify({'count': count})
 
-@app.route('/api/backup')
-def backup_data():
-    backup = {
-        'lists': movie_lists,
-        'cache': movie_cache,
-        'metadata': metadata,
-        'backup_date': datetime.now().isoformat()
-    }
-    
-    backup_path = os.path.join(DATA_DIR, 'backup.json')
-    with open(backup_path, 'w') as f:
-        json.dump(backup, f, indent=2)
-    
-    return send_file(backup_path, as_attachment=True, download_name='tmdb-lists-backup.json')
-
-@app.route('/api/restore', methods=['POST'])
-def restore_data():
-    if 'file' not in request.files:
-        return jsonify({'success': False, 'error': 'No file uploaded'}), 400
-    
-    file = request.files['file']
-    
-    try:
-        backup = json.load(file)
-        
-        global movie_lists, movie_cache, metadata
-        movie_lists = backup.get('lists', {})
-        movie_cache = backup.get('cache', {})
-        metadata = backup.get('metadata', {'lastUpdated': None})
-        
-        save_lists(movie_lists)
-        save_cache(movie_cache)
-        save_metadata(metadata)
-        
-        return jsonify({'success': True})
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 400
-
 @app.route('/view/<list_id>')
 def view_list(list_id):
     if list_id not in movie_lists:
