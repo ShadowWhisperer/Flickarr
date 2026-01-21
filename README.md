@@ -1,6 +1,6 @@
 🚨  This is in BETA. I do not recommend to try it yet  
 🚨  This way made with help from AI  
-
+🚨  Do NOT conncect this to a reverse proxy. You will have problems.  
 
 ### Flickarr  
 Use filters to generates custom movie lists from The Movie Database (TMDB) API, for use with Radarr. Filtere lists based on genres, ratings, release years, actors, studios, languages.  
