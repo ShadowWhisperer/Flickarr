@@ -1,15 +1,37 @@
 services:
   flickarr:
-    image: ghcr.io/shadowwhisperer/flickarr:latest
+    image: ghcr.io/ShadowWhisperer/flickarr:latest
     container_name: flickarr
     ports:
       - "5000:5000"
     volumes:
       - ./data:/app/data
     environment:
-      - TMDB_API_KEY=your_key  # Replace with your TMDB API key
-      - DEFAULT_LANGUAGES=en   # Comma-separated: en,es,fr,de,ja,ko,zh,pt,ru,hi,ar,i
+      - TMDB_API_KEY=your_key # Replace with your TMDB API key
+      - DEFAULT_LANGUAGES=en  # Comma-separated: en,es,fr,de,ja,ko,zh,pt,ru,hi,ar,it
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    tmpfs:
+      - /tmp
+     user: "1000:1000"         #User ID - id -u <USER_NAME?
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "3"
     healthcheck:
       test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:5000/', timeout=5)"]
       interval: 30s
