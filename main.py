@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, send_file
+from flask import Flask, render_template, request, jsonify
 import requests
 import json
 import os
@@ -8,7 +8,7 @@ app = Flask(__name__)
 
 TMDB_API_KEY = os.getenv('TMDB_API_KEY', '')
 if not TMDB_API_KEY:
-    print("WARNING: TMDB_API_KEY environment variable not set!")
+    print("WARNING: TMDB_API_KEY not set")
 
 DEFAULT_LANGUAGES_STR = os.getenv('DEFAULT_LANGUAGES', 'en')
 DEFAULT_LANGUAGES = [lang.strip() for lang in DEFAULT_LANGUAGES_STR.split(',') if lang.strip()]
@@ -341,7 +341,7 @@ def search_movies_by_title(list_config, title_query):
         except Exception as e:
             print(f"Error searching movies: {e}")
             break
-    
+
     print(f"✓ {len(movies)} Movies - Title Search")
     return movies[:max_results]
 
@@ -355,7 +355,7 @@ def should_update_cache():
 
 @app.route('/')
 def index():
-    return render_template('index.html', default_languages=DEFAULT_LANGUAGES)
+    return render_template('index.html')
 
 @app.route('/api/metadata')
 def get_metadata():
@@ -430,8 +430,7 @@ def preview_list():
 @app.route('/api/create-list', methods=['POST'])
 def create_list():
     data = request.json
-    
-    # Check if name already exists
+
     new_name = data['name']
     for existing_id, existing_list in movie_lists.items():
         if existing_list['name'].lower() == new_name.lower():
@@ -446,7 +445,7 @@ def create_list():
         'yearFrom': data.get('yearFrom'),
         'yearTo': data.get('yearTo'),
         'maxResults': data.get('maxResults'),
-        'languages': data.get('languages', DEFAULT_LANGUAGES),  # Use default from env
+        'languages': data.get('languages', DEFAULT_LANGUAGES),
         'includeGenres': data.get('includeGenres', []),
         'excludeGenres': data.get('excludeGenres', []),
         'titleTerms': data.get('titleTerms', ''),
@@ -471,13 +470,12 @@ def update_list(list_id):
         return jsonify({'success': False, 'error': 'List not found'}), 404
     
     data = request.json
-    
-    # Check if new name conflicts with another list
+
     new_name = data['name']
     for existing_id, existing_list in movie_lists.items():
         if existing_id != list_id and existing_list['name'].lower() == new_name.lower():
             return jsonify({'success': False, 'error': 'A list with this name already exists'}), 400
-    
+
     movie_lists[list_id].update({
         'name': data['name'],
         'minRating': data.get('minRating'),
