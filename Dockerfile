@@ -11,8 +11,13 @@ COPY main.py .
 COPY static ./static
 COPY templates ./templates
 
-# Create data directory for persistence
-RUN mkdir -p /app/data
+# Create data directory and non-root user
+RUN mkdir -p /app/data && \
+    useradd -m -u 1000 flickarr && \
+    chown -R flickarr:flickarr /app
+
+# Switch to non-root user
+USER flickarr
 
 # Expose port
 EXPOSE 5000
