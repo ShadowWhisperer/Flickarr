@@ -342,7 +342,7 @@ def search_movies_by_title(list_config, title_query):
             print(f"Error searching movies: {e}")
             break
     
-    print(f"{len(movies)} Movies Found - Title Search")
+    print(f"✓ {len(movies)} Movies - Title Search")
     return movies[:max_results]
 
 def should_update_cache():
