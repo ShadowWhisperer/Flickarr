@@ -30,7 +30,7 @@ services:
         - python
         - -c
         - import requests; requests.get('http://localhost:5000/', timeout=5)
-      interval: 30s
+      interval: 300s
       timeout: 10s
       retries: 3
       start_period: 10s
