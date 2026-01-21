@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Flickarr - TMDB Movie List Generator</title>
+    <title>Flickarr - Movie List Generator</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
@@ -19,7 +19,7 @@
                 <div>
                     <button class="btn-new" onclick="showFormScreen()">+ New List</button>
                     <button class="btn-test" onclick="testAPI()">Test API</button>
-                    <button class="btn-refresh" onclick="refreshCache()">Refresh Cache</button>
+                    <button class="btn-refresh" onclick="refreshCache()">Update</button>
                     <span id="apiStatus"></span>
                 </div>
             </div>
@@ -30,6 +30,7 @@
             </div>
         </div>
 
+        <!-- Form Screen -->
         <div id="form-screen">
             <button class="back-button" onclick="showMainScreen()">← Back</button>
 
@@ -55,11 +56,6 @@
                         <input type="number" id="yearFrom" name="yearFrom" min="1900" max="2030" placeholder="From">
                         <input type="number" id="yearTo" name="yearTo" min="1900" max="2030" placeholder="To">
                     </div>
-                </div>
-
-                <div class="language-section">
-                    <label>Languages:</label>
-                    <div class="language-buttons" id="languageButtons"></div>
                 </div>
 
                 <div class="genre-section">
@@ -123,9 +119,6 @@
         </div>
     </div>
 
-    <script>
-        const DEFAULT_LANGUAGES = {{ default_languages | tojson }};
-    </script>
     <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>
