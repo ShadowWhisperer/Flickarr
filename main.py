@@ -310,6 +310,20 @@ def search_movies_by_title(list_config, title_query):
                         if excluded_genres.intersection(movie_genres):
                             continue
                     
+                    # Check runtime (fetch movie details to get runtime)
+                    try:
+                        details_response = requests.get(
+                            f"{TMDB_BASE_URL}/movie/{movie['id']}",
+                            params={'api_key': TMDB_API_KEY}
+                        )
+                        if details_response.status_code == 200:
+                            details = details_response.json()
+                            runtime = details.get('runtime', 0)
+                            if runtime and runtime < 45:
+                                continue
+                    except Exception as e:
+                        print(f"Error checking runtime: {e}")
+                    
                     if excluded_actor_ids:
                         has_excluded = False
                         try:
