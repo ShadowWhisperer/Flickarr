@@ -7,7 +7,7 @@ services:
     volumes:
       - ./data:/app/data
     environment:
-      - TZ=America/New_York
+      - TZ=America/New_York   # Your Time Zone
       - TMDB_API_KEY=your_key # Replace with your TMDB API key
       - DEFAULT_LANGUAGES=en  # en,es,fr,de,ja,ko,zh,pt,ru,hi,ar,it
     restart: unless-stopped
