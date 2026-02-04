@@ -1,15 +1,7 @@
-🚨  This is in BETA. I do not recommend using it yet  
-🚨  This was made with help from AI  
-🚨  Do NOT connect this to a reverse proxy. You will have problems.  
-
-<br/><br/>
-Use filters to generates custom movie lists from The Movie Database (TMDB), for use with Radarr.  
-Filter lists based on genres, ratings, release years, actors, studios.  
-<br/><br/>
-
 <img width="900" height="534" alt="Capture" src="https://github.com/user-attachments/assets/eef15d99-55b0-42ab-8d99-82b541fea92e" />  
-
-
+  
+Make filters (actors, genres, ratings, studios, years) to generates custom movie lists for Radarr.  
+  
 ### Scans exclude:
  - Adult content  
  - Stand-up comedy  
@@ -33,8 +25,8 @@ nano docker-compose.yml
 ```
 TMDB_API_KEY=       Set you API Key
 DEFAULT_LANGUAGES=  Search for only movies in these languages
+TZ=                 Your time zone. Used in the GUI for last upated time.
 user:               ID # of your non-root user.  *Make sure user has permissions to access data dir.
-
 ```
 
 3. Start the container:
@@ -44,7 +36,9 @@ docker-compose up -d
 
 Web Page: `http://localhost:5000`  
 <br />  
-
+  
+🚨  Do NOT connect this to your WAN. Designed for local access only. You will have problems.  
+  
 ## Radarr Setup  
 1. Create and configure your lists in the web interface at `http://localhost:5000`
 2. Copy the Master List URL from the main screen
@@ -68,5 +62,3 @@ Web Page: `http://localhost:5000`
 - Movie data provided by [The Movie Database (TMDB)](https://www.themoviedb.org/)
 - Built for [Radarr](https://github.com/Radarr/Radarr)
 - Inspired by [listrr.pro](https://listrr.pro). *Listrr is far more advanced.
-
-
