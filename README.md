@@ -1,6 +1,6 @@
-<img width="900" height="534" alt="Capture" src="https://github.com/user-attachments/assets/eef15d99-55b0-42ab-8d99-82b541fea92e" />  
-  
-Make filters (actors, genres, ratings, studios, years) to generates custom movie lists for Radarr.  
+<img width="874" height="605" alt="Capture" src="https://github.com/user-attachments/assets/da2e980a-2346-4188-9428-1038b7016606" />
+
+Build custom lists for Radarr, using filters (actors, genres, ratings, studios, years).  
   
 ### Scans exclude:
  - Adult content  
