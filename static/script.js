@@ -48,38 +48,6 @@ async function loadLastUpdated() {
     }
 }
 
-// Test API function
-async function testAPI() {
-    const statusEl = document.getElementById('apiStatus');
-    statusEl.textContent = 'Testing...';
-    statusEl.className = 'api-status';
-    
-    try {
-        const response = await fetch('/api/test-api');
-        const result = await response.json();
-        
-        if (result.success) {
-            statusEl.textContent = '✓ API Working';
-            statusEl.className = 'api-status success';
-        } else {
-            statusEl.textContent = '✗ API Error: ' + result.error;
-            statusEl.className = 'api-status error';
-        }
-        
-        setTimeout(() => {
-            statusEl.textContent = '';
-            statusEl.className = '';
-        }, 5000);
-    } catch (error) {
-        statusEl.textContent = '✗ Connection Error';
-        statusEl.className = 'api-status error';
-        setTimeout(() => {
-            statusEl.textContent = '';
-            statusEl.className = '';
-        }, 5000);
-    }
-}
-
 // Refresh cache function
 async function refreshCache() {
     const statusEl = document.getElementById('apiStatus');
