@@ -383,21 +383,6 @@ def get_metadata():
     metadata['totalMovies'] = len(all_movie_ids)
     return jsonify(metadata)
 
-@app.route('/api/test-api')
-def test_api():
-    try:
-        response = requests.get(
-            f"{TMDB_BASE_URL}/movie/550",
-            params={'api_key': TMDB_API_KEY},
-            timeout=5
-        )
-        if response.status_code == 200:
-            return jsonify({'success': True})
-        else:
-            return jsonify({'success': False, 'error': f'API returned status {response.status_code}'})
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)})
-
 @app.route('/api/search-person')
 def api_search_person():
     query = request.args.get('q', '')
