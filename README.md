@@ -13,25 +13,12 @@ Build custom lists for Radarr, using filters (actors, genres, ratings, studios, 
 ### Prerequisites  
 - TMDB API key [HERE](https://www.themoviedb.org/settings/api)
 
-## Installation  
-1. Clone the repository:
-```bash
-git clone https://github.com/ShadowWhisperer/flickarr.git
-cd flickarr
-nano docker-compose.yml
-```
-
-2. docker-compose.yml settings
+## docker-compose
 ```
 TMDB_API_KEY=       Set you API Key
 DEFAULT_LANGUAGES=  Search for only movies in these languages
 TZ=                 Your time zone. Used in the GUI for last upated time.
 user:               ID # of your non-root user.  *Make sure user has permissions to access data dir.
-```
-
-3. Start the container:
-```bash
-docker-compose up -d
 ```
 
 Web Page: `http://localhost:5000`  
