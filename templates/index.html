@@ -1,6 +1,8 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Flickarr - Movie List Generator</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
@@ -52,8 +54,8 @@
                 <div class="form-row">
                     <label>Year Between:</label>
                     <div class="two-inputs">
-                        <input type="number" id="yearFrom" name="yearFrom" min="1900" max="2030" placeholder="From">
-                        <input type="number" id="yearTo" name="yearTo" min="1900" max="2030" placeholder="To">
+                        <input type="number" id="yearFrom" name="yearFrom" min="1900" placeholder="From">
+                        <input type="number" id="yearTo" name="yearTo" min="1900" placeholder="To">
                     </div>
                 </div>
 
