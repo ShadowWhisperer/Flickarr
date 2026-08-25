@@ -2,6 +2,10 @@ from flask import Flask, render_template, request, jsonify
 import requests
 import json
 import os
+import re
+import html
+import threading
+import uuid
 from datetime import datetime, timedelta
 
 app = Flask(__name__)
@@ -15,6 +19,7 @@ DEFAULT_LANGUAGES = [lang.strip() for lang in DEFAULT_LANGUAGES_STR.split(',') i
 print(f"Default languages: {', '.join(DEFAULT_LANGUAGES)}")
 
 TMDB_BASE_URL = 'https://api.themoviedb.org/3'
+MAX_PAGES = 25
 
 DATA_DIR = os.getenv('DATA_DIR', './data')
 os.makedirs(DATA_DIR, exist_ok=True)
@@ -56,6 +61,7 @@ def save_metadata(metadata):
 movie_lists = load_lists()
 movie_cache = load_cache()
 metadata = load_metadata()
+state_lock = threading.Lock()
 
 def refresh_cache_on_startup():
     if should_update_cache():
@@ -88,11 +94,13 @@ def refresh_all_lists_parallel():
         
         for future in as_completed(futures):
             list_id, movies = future.result()
-            movie_cache[list_id] = movies
-    
-    metadata['lastUpdated'] = datetime.now().isoformat()
-    save_cache(movie_cache)
-    save_metadata(metadata)
+            with state_lock:
+                movie_cache[list_id] = movies
+
+    with state_lock:
+        metadata['lastUpdated'] = datetime.now().isoformat()
+        save_cache(movie_cache)
+        save_metadata(metadata)
     print("Cache refresh done!")
 
 def search_person(name):
@@ -102,10 +110,12 @@ def search_person(name):
         'query': name.strip()
     }
     try:
-        response = requests.get(url, params=params)
+        response = requests.get(url, params=params, timeout=10)
         if response.status_code == 200:
             results = response.json().get('results', [])
             return [{'id': p['id'], 'name': p['name']} for p in results[:10]]
+        elif response.status_code == 429:
+            print("TMDB rate limit hit while searching person")
     except Exception as e:
         print(f"Error searching person: {e}")
     return []
@@ -117,7 +127,7 @@ def search_company_id(company_name):
         'query': company_name.strip()
     }
     try:
-        response = requests.get(url, params=params)
+        response = requests.get(url, params=params, timeout=10)
         if response.status_code == 200:
             results = response.json().get('results', [])
             if results:
@@ -126,6 +136,8 @@ def search_company_id(company_name):
                 selected = results[0]
                 print(f"Using: '{selected['name']}' (ID: {selected['id']})")
                 return selected['id']
+        elif response.status_code == 429:
+            print("TMDB rate limit hit while searching company")
     except Exception as e:
         print(f"Error searching company: {e}")
     return None
@@ -133,7 +145,7 @@ def search_company_id(company_name):
 def get_movies_from_tmdb(list_config):
     movies = []
     page = 1
-    max_pages = 25
+    max_pages = MAX_PAGES
     
     title_terms = list_config.get('titleTerms', '').strip()
     
@@ -187,7 +199,7 @@ def get_movies_from_tmdb(list_config):
     while len(movies) < max_results and page <= max_pages:
         params['page'] = page
         try:
-            response = requests.get(f"{TMDB_BASE_URL}/discover/movie", params=params)
+            response = requests.get(f"{TMDB_BASE_URL}/discover/movie", params=params, timeout=10)
             
             if response.status_code == 200:
                 results = response.json().get('results', [])
@@ -213,7 +225,8 @@ def get_movies_from_tmdb(list_config):
                         try:
                             credits_response = requests.get(
                                 f"{TMDB_BASE_URL}/movie/{movie['id']}/credits",
-                                params={'api_key': TMDB_API_KEY}
+                                params={'api_key': TMDB_API_KEY},
+                                timeout=10
                             )
                             if credits_response.status_code == 200:
                                 credits = credits_response.json()
@@ -223,6 +236,8 @@ def get_movies_from_tmdb(list_config):
                                 
                                 if any(ex_id in all_people_ids for ex_id in excluded_actor_ids):
                                     has_excluded = True
+                            elif credits_response.status_code == 429:
+                                print("TMDB rate limit hit while checking credits")
                         except Exception as e:
                             print(f"Error checking credits: {e}")
                         
@@ -234,6 +249,9 @@ def get_movies_from_tmdb(list_config):
                         break
                 
                 page += 1
+            elif response.status_code == 429:
+                print("TMDB rate limit hit on discover - stopping pagination")
+                break
             else:
                 print(f"TMDB API Error: Status {response.status_code}")
                 break
@@ -246,7 +264,7 @@ def get_movies_from_tmdb(list_config):
 def search_movies_by_title(list_config, title_query):
     movies = []
     page = 1
-    max_pages = 25
+    max_pages = MAX_PAGES
     max_results = list_config.get('maxResults') or 500
     
     excluded_actor_ids = [actor['id'] for actor in list_config.get('excludeActors', [])]
@@ -264,7 +282,8 @@ def search_movies_by_title(list_config, title_query):
                     'api_key': TMDB_API_KEY,
                     'query': title_query,
                     'page': page
-                }
+                },
+                timeout=10
             )
             
             if response.status_code == 200:
@@ -310,17 +329,22 @@ def search_movies_by_title(list_config, title_query):
                         if excluded_genres.intersection(movie_genres):
                             continue
                     
-                    # Check runtime (fetch movie details to get runtime)
+                    # Check runtime only when this movie is otherwise a candidate
+                    # (fetch movie details to get runtime) - skips the call entirely
+                    # once the result would already be excluded by earlier filters
                     try:
                         details_response = requests.get(
                             f"{TMDB_BASE_URL}/movie/{movie['id']}",
-                            params={'api_key': TMDB_API_KEY}
+                            params={'api_key': TMDB_API_KEY},
+                            timeout=10
                         )
                         if details_response.status_code == 200:
                             details = details_response.json()
                             runtime = details.get('runtime', 0)
                             if runtime and runtime < 45:
                                 continue
+                        elif details_response.status_code == 429:
+                            print("TMDB rate limit hit while checking runtime")
                     except Exception as e:
                         print(f"Error checking runtime: {e}")
                     
@@ -329,7 +353,8 @@ def search_movies_by_title(list_config, title_query):
                         try:
                             credits_response = requests.get(
                                 f"{TMDB_BASE_URL}/movie/{movie['id']}/credits",
-                                params={'api_key': TMDB_API_KEY}
+                                params={'api_key': TMDB_API_KEY},
+                                timeout=10
                             )
                             if credits_response.status_code == 200:
                                 credits = credits_response.json()
@@ -339,6 +364,8 @@ def search_movies_by_title(list_config, title_query):
                                 
                                 if any(ex_id in all_people_ids for ex_id in excluded_actor_ids):
                                     has_excluded = True
+                            elif credits_response.status_code == 429:
+                                print("TMDB rate limit hit while checking credits")
                         except Exception as e:
                             print(f"Error checking credits: {e}")
                         
@@ -350,6 +377,9 @@ def search_movies_by_title(list_config, title_query):
                         break
                 
                 page += 1
+            elif response.status_code == 429:
+                print("TMDB rate limit hit on search - stopping pagination")
+                break
             else:
                 break
         except Exception as e:
@@ -360,12 +390,36 @@ def search_movies_by_title(list_config, title_query):
     return movies[:max_results]
 
 def should_update_cache():
-    last_updated = metadata.get('lastUpdated')
+    with state_lock:
+        last_updated = metadata.get('lastUpdated')
     if not last_updated:
         return True
     
     last_update_time = datetime.fromisoformat(last_updated)
     return datetime.now() - last_update_time > timedelta(hours=3)
+
+def validate_numeric_fields(data):
+    """Validates optional numeric fields; returns an error string, or None if OK."""
+    numeric_fields = {
+        'minRating': (0, 10),
+        'minVotes': (0, None),
+        'yearFrom': (1870, 2100),
+        'yearTo': (1870, 2100),
+        'maxResults': (1, 2000),
+    }
+    for field, (min_val, max_val) in numeric_fields.items():
+        value = data.get(field)
+        if value in (None, ''):
+            continue
+        try:
+            number = float(value)
+        except (TypeError, ValueError):
+            return f"'{field}' must be a number"
+        if min_val is not None and number < min_val:
+            return f"'{field}' must be at least {min_val}"
+        if max_val is not None and number > max_val:
+            return f"'{field}' must be at most {max_val}"
+    return None
 
 @app.route('/')
 def index():
@@ -398,10 +452,12 @@ def api_search_company():
         'query': query.strip()
     }
     try:
-        response = requests.get(url, params=params)
+        response = requests.get(url, params=params, timeout=10)
         if response.status_code == 200:
             results = response.json().get('results', [])
             return jsonify([{'id': c['id'], 'name': c['name']} for c in results[:10]])
+        elif response.status_code == 429:
+            print("TMDB rate limit hit while searching company")
     except Exception as e:
         print(f"Error searching company: {e}")
     return jsonify([])
@@ -430,80 +486,100 @@ def preview_list():
 def create_list():
     data = request.json
 
-    new_name = data['name']
-    for existing_id, existing_list in movie_lists.items():
-        if existing_list['name'].lower() == new_name.lower():
-            return jsonify({'success': False, 'error': 'A list with this name already exists'}), 400
-    
-    list_id = data['name'].lower().replace(' ', '-').replace('/', '-') + '-' + str(len(movie_lists))
-    
-    list_config = {
-        'name': data['name'],
-        'minRating': data.get('minRating'),
-        'minVotes': data.get('minVotes'),
-        'yearFrom': data.get('yearFrom'),
-        'yearTo': data.get('yearTo'),
-        'maxResults': data.get('maxResults'),
-        'languages': data.get('languages', DEFAULT_LANGUAGES),
-        'includeGenres': data.get('includeGenres', []),
-        'excludeGenres': data.get('excludeGenres', []),
-        'titleTerms': data.get('titleTerms', ''),
-        'titleExclude': data.get('titleExclude', ''),
-        'studios': data.get('studios', []),
-        'actors': data.get('actors', []),
-        'excludeActors': data.get('excludeActors', []),
-        'enabled': True,
-        'created': datetime.now().isoformat()
-    }
-    
-    movie_lists[list_id] = list_config
-    movie_cache[list_id] = []
-    save_lists(movie_lists)
-    save_cache(movie_cache)
+    new_name = data.get('name', '').strip()
+    if not new_name:
+        return jsonify({'success': False, 'error': 'Name is required'}), 400
+
+    validation_error = validate_numeric_fields(data)
+    if validation_error:
+        return jsonify({'success': False, 'error': validation_error}), 400
+
+    with state_lock:
+        for existing_id, existing_list in movie_lists.items():
+            if existing_list['name'].lower() == new_name.lower():
+                return jsonify({'success': False, 'error': 'A list with this name already exists'}), 400
+
+        slug = re.sub(r'[^a-z0-9]+', '-', new_name.lower()).strip('-') or 'list'
+        list_id = f"{slug}-{uuid.uuid4().hex[:8]}"
+        
+        list_config = {
+            'name': new_name,
+            'minRating': data.get('minRating'),
+            'minVotes': data.get('minVotes'),
+            'yearFrom': data.get('yearFrom'),
+            'yearTo': data.get('yearTo'),
+            'maxResults': data.get('maxResults'),
+            'languages': data.get('languages', DEFAULT_LANGUAGES),
+            'includeGenres': data.get('includeGenres', []),
+            'excludeGenres': data.get('excludeGenres', []),
+            'titleTerms': data.get('titleTerms', ''),
+            'titleExclude': data.get('titleExclude', ''),
+            'studios': data.get('studios', []),
+            'actors': data.get('actors', []),
+            'excludeActors': data.get('excludeActors', []),
+            'enabled': True,
+            'created': datetime.now().isoformat()
+        }
+        
+        movie_lists[list_id] = list_config
+        movie_cache[list_id] = []
+        save_lists(movie_lists)
+        save_cache(movie_cache)
     
     return jsonify({'success': True, 'list_id': list_id})
 
 @app.route('/api/update-list/<list_id>', methods=['PUT'])
 def update_list(list_id):
-    if list_id not in movie_lists:
-        return jsonify({'success': False, 'error': 'List not found'}), 404
+    with state_lock:
+        if list_id not in movie_lists:
+            return jsonify({'success': False, 'error': 'List not found'}), 404
     
     data = request.json
 
-    new_name = data['name']
-    for existing_id, existing_list in movie_lists.items():
-        if existing_id != list_id and existing_list['name'].lower() == new_name.lower():
-            return jsonify({'success': False, 'error': 'A list with this name already exists'}), 400
+    new_name = data.get('name', '').strip()
+    if not new_name:
+        return jsonify({'success': False, 'error': 'Name is required'}), 400
 
-    movie_lists[list_id].update({
-        'name': data['name'],
-        'minRating': data.get('minRating'),
-        'minVotes': data.get('minVotes'),
-        'yearFrom': data.get('yearFrom'),
-        'yearTo': data.get('yearTo'),
-        'includeGenres': data.get('includeGenres', []),
-        'excludeGenres': data.get('excludeGenres', []),
-        'titleTerms': data.get('titleTerms', ''),
-        'titleExclude': data.get('titleExclude', ''),
-        'studios': data.get('studios', []),
-        'actors': data.get('actors', []),
-        'excludeActors': data.get('excludeActors', []),
-    })
-    
-    save_lists(movie_lists)
+    validation_error = validate_numeric_fields(data)
+    if validation_error:
+        return jsonify({'success': False, 'error': validation_error}), 400
+
+    with state_lock:
+        for existing_id, existing_list in movie_lists.items():
+            if existing_id != list_id and existing_list['name'].lower() == new_name.lower():
+                return jsonify({'success': False, 'error': 'A list with this name already exists'}), 400
+
+        movie_lists[list_id].update({
+            'name': new_name,
+            'minRating': data.get('minRating'),
+            'minVotes': data.get('minVotes'),
+            'yearFrom': data.get('yearFrom'),
+            'yearTo': data.get('yearTo'),
+            'includeGenres': data.get('includeGenres', []),
+            'excludeGenres': data.get('excludeGenres', []),
+            'titleTerms': data.get('titleTerms', ''),
+            'titleExclude': data.get('titleExclude', ''),
+            'studios': data.get('studios', []),
+            'actors': data.get('actors', []),
+            'excludeActors': data.get('excludeActors', []),
+        })
+        
+        save_lists(movie_lists)
     return jsonify({'success': True})
 
 @app.route('/api/toggle-list/<list_id>', methods=['POST'])
 def toggle_list(list_id):
-    if list_id in movie_lists:
-        movie_lists[list_id]['enabled'] = not movie_lists[list_id].get('enabled', True)
-        save_lists(movie_lists)
+    with state_lock:
+        if list_id in movie_lists:
+            movie_lists[list_id]['enabled'] = not movie_lists[list_id].get('enabled', True)
+            save_lists(movie_lists)
     return jsonify({'success': True})
 
 @app.route('/api/delete-list/<list_id>', methods=['DELETE'])
 def delete_list(list_id):
-    if list_id in movie_lists:
-        del movie_lists[list_id]
+    with state_lock:
+        if list_id in movie_lists:
+            del movie_lists[list_id]
         if list_id in movie_cache:
             del movie_cache[list_id]
         save_lists(movie_lists)
@@ -528,12 +604,13 @@ def view_list(list_id):
     movies = movie_cache.get(list_id, [])
     
     sorted_movies = sorted(movies, key=lambda m: m.get('release_date', ''))
-    
-    html = f"""
+    safe_name = html.escape(list_config['name'])
+
+    page = f"""
     <!DOCTYPE html>
     <html>
     <head>
-        <title>{list_config['name']} - Movie List</title>
+        <title>{safe_name} - Movie List</title>
         <style>
             body {{
                 font-family: Arial, sans-serif;
@@ -576,7 +653,7 @@ def view_list(list_id):
     </head>
     <body>
         <div class="container">
-            <h1>{list_config['name']}</h1>
+            <h1>{safe_name}</h1>
             <div class="count">Total: {len(movies)} movies</div>
             <table>
                 <thead>
@@ -594,16 +671,17 @@ def view_list(list_id):
         year = movie.get('release_date', '')[:4] if movie.get('release_date') else 'N/A'
         rating = round(movie.get('vote_average', 0), 1)
         votes = movie.get('vote_count', 0)
-        html += f"""
+        safe_title = html.escape(movie.get('title', ''))
+        page += f"""
                     <tr>
-                        <td>{movie['title']}</td>
+                        <td>{safe_title}</td>
                         <td>{year}</td>
                         <td>{rating}/10</td>
                         <td>{votes:,}</td>
                     </tr>
         """
     
-    html += """
+    page += """
                 </tbody>
             </table>
         </div>
@@ -611,7 +689,7 @@ def view_list(list_id):
     </html>
     """
     
-    return html
+    return page
 
 @app.route('/api/refresh-cache', methods=['POST'])
 def force_refresh_cache():
