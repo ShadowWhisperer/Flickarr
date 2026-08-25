@@ -26,6 +26,13 @@ let excludedActors = [];
 let selectedStudios = [];
 let searchTimeout;
 
+// Escapes text for safe insertion into innerHTML
+function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str == null ? '' : String(str);
+    return div.innerHTML;
+}
+
 // Initialize
 document.getElementById('masterUrl').textContent = window.location.origin + '/api/master-list';
 
@@ -243,7 +250,7 @@ function renderActors() {
         removeBtn.className = 'remove';
         removeBtn.textContent = '×';
         removeBtn.onclick = () => removeActor(actor.id, false);
-        tag.innerHTML = `${actor.name} [${actor.id}] `;
+        tag.innerHTML = `${escapeHtml(actor.name)} [${escapeHtml(actor.id)}] `;
         tag.appendChild(removeBtn);
         includeContainer.appendChild(tag);
     });
@@ -256,7 +263,7 @@ function renderActors() {
         removeBtn.className = 'remove';
         removeBtn.textContent = '×';
         removeBtn.onclick = () => removeActor(actor.id, true);
-        tag.innerHTML = `${actor.name} [${actor.id}] `;
+        tag.innerHTML = `${escapeHtml(actor.name)} [${escapeHtml(actor.id)}] `;
         tag.appendChild(removeBtn);
         excludeContainer.appendChild(tag);
     });
@@ -272,7 +279,7 @@ function renderStudios() {
         removeBtn.className = 'remove';
         removeBtn.textContent = '×';
         removeBtn.onclick = () => removeStudio(studio.id);
-        tag.innerHTML = `${studio.name} [${studio.id}] `;
+        tag.innerHTML = `${escapeHtml(studio.name)} [${escapeHtml(studio.id)}] `;
         tag.appendChild(removeBtn);
         container.appendChild(tag);
     });
@@ -380,8 +387,8 @@ async function previewList() {
         
         const listHtml = movies.map(movie => `
             <div class="movie-item">
-                <span class="movie-title">${movie.title}</span>
-                <span class="movie-year">${movie.year}</span>
+                <span class="movie-title">${escapeHtml(movie.title)}</span>
+                <span class="movie-year">${escapeHtml(movie.year)}</span>
             </div>
         `).join('');
         
@@ -467,16 +474,25 @@ async function loadLists() {
         div.innerHTML = `
             <div class="list-info">
                 <div class="list-name">
-                    <span class="name-bold">${list.name}</span> - <span class="movie-count-small">...</span>
+                    <span class="name-bold">${escapeHtml(list.name)}</span> - <span class="movie-count-small">...</span>
                 </div>
             </div>
             <div class="list-actions">
-                <input type="checkbox" ${list.enabled !== false ? 'checked' : ''} onchange="toggleList('${id}')" title="Enable/Disable">
-                <button class="btn-view" onclick="viewList('${id}')">View</button>
-                <button class="btn-edit" onclick="showFormScreen('${id}')">Edit</button>
-                <button class="btn-delete" onclick="deleteList('${id}')">Delete</button>
+                <input type="checkbox" ${list.enabled !== false ? 'checked' : ''} title="Enable/Disable">
+                <button class="btn-view">View</button>
+                <button class="btn-edit">Edit</button>
+                <button class="btn-delete">Delete</button>
             </div>
         `;
+
+        // Bind events via data reference instead of interpolating the id into
+        // inline handler strings, which prevents attribute/JS injection via
+        // crafted list names or ids.
+        div.querySelector('input[type="checkbox"]').addEventListener('change', () => toggleList(id));
+        div.querySelector('.btn-view').addEventListener('click', () => viewList(id));
+        div.querySelector('.btn-edit').addEventListener('click', () => showFormScreen(id));
+        div.querySelector('.btn-delete').addEventListener('click', () => deleteList(id));
+
         container.appendChild(div);
     });
 }
@@ -537,5 +553,12 @@ setupActorAutocomplete('actorSearch', 'autocomplete-list', null, false);
 setupActorAutocomplete('excludeActorSearch', 'exclude-autocomplete-list', null, true);
 setupStudioAutocomplete();
 initGenreButtons();
+
+// Year fields accept up to 3 years out from today, computed at load time
+// instead of a hardcoded year that goes stale.
+const maxYear = new Date().getFullYear() + 3;
+document.getElementById('yearFrom').max = maxYear;
+document.getElementById('yearTo').max = maxYear;
+
 showMainScreen();
 loadLists();
