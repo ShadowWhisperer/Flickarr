@@ -6,9 +6,38 @@ import re
 import html
 import threading
 import uuid
+import socket
+import time
 from datetime import datetime, timedelta
 
 app = Flask(__name__)
+
+# --- DNS cache ---
+# Every TMDB/Radarr call re-resolves the same handful of hostnames.
+# socket.getaddrinfo isn't cached by Python/urllib3, so a brief resolver
+# hiccup fails a request that a cached answer from moments ago would have
+# served fine. This wraps it with a short TTL cache, storing successes only
+# so real, sustained DNS outages still surface (not silently swallowed).
+_dns_cache = {}
+_dns_cache_lock = threading.Lock()
+DNS_CACHE_TTL_SECONDS = 300
+_original_getaddrinfo = socket.getaddrinfo
+
+def _cached_getaddrinfo(host, port, family=0, type=0, proto=0, flags=0):
+    cache_key = (host, port, family, type, proto, flags)
+    now = time.time()
+    with _dns_cache_lock:
+        cached = _dns_cache.get(cache_key)
+        if cached and now - cached[1] < DNS_CACHE_TTL_SECONDS:
+            return cached[0]
+
+    result = _original_getaddrinfo(host, port, family, type, proto, flags)
+
+    with _dns_cache_lock:
+        _dns_cache[cache_key] = (result, now)
+    return result
+
+socket.getaddrinfo = _cached_getaddrinfo
 
 TMDB_API_KEY = os.getenv('TMDB_API_KEY', '')
 if not TMDB_API_KEY:
@@ -21,12 +50,20 @@ print(f"Default languages: {', '.join(DEFAULT_LANGUAGES)}")
 TMDB_BASE_URL = 'https://api.themoviedb.org/3'
 MAX_PAGES = 25
 
+def safe_error(e):
+    """Stringifies an exception with API key values stripped, since
+    requests embeds the full request URL (including the query string)
+    in connection-error messages. Matches both TMDB's api_key= and
+    Radarr's apikey= query params."""
+    return re.sub(r'api_?key=[^&\s\']+', 'api_key=REDACTED', str(e), flags=re.IGNORECASE)
+
 DATA_DIR = os.getenv('DATA_DIR', './data')
 os.makedirs(DATA_DIR, exist_ok=True)
 
 LISTS_FILE = os.path.join(DATA_DIR, 'lists.json')
 CACHE_FILE = os.path.join(DATA_DIR, 'cache.json')
 METADATA_FILE = os.path.join(DATA_DIR, 'update_time.json')
+IGNORE_FILE = os.path.join(DATA_DIR, 'ignore.json')
 
 def load_lists():
     if os.path.exists(LISTS_FILE):
@@ -58,9 +95,21 @@ def save_metadata(metadata):
     with open(METADATA_FILE, 'w') as f:
         json.dump(metadata, f, indent=2)
 
+def load_ignore_list():
+    # Keyed by TMDB id (string) -> {'title': ..., 'year': ...}
+    if os.path.exists(IGNORE_FILE):
+        with open(IGNORE_FILE, 'r') as f:
+            return json.load(f)
+    return {}
+
+def save_ignore_list(ignored):
+    with open(IGNORE_FILE, 'w') as f:
+        json.dump(ignored, f, indent=2)
+
 movie_lists = load_lists()
 movie_cache = load_cache()
 metadata = load_metadata()
+ignore_list = load_ignore_list()
 state_lock = threading.Lock()
 
 def refresh_cache_on_startup():
@@ -117,7 +166,7 @@ def search_person(name):
         elif response.status_code == 429:
             print("TMDB rate limit hit while searching person")
     except Exception as e:
-        print(f"Error searching person: {e}")
+        print(f"Error searching person: {safe_error(e)}")
     return []
 
 def search_company_id(company_name):
@@ -139,7 +188,7 @@ def search_company_id(company_name):
         elif response.status_code == 429:
             print("TMDB rate limit hit while searching company")
     except Exception as e:
-        print(f"Error searching company: {e}")
+        print(f"Error searching company: {safe_error(e)}")
     return None
 
 def get_movies_from_tmdb(list_config):
@@ -210,6 +259,9 @@ def get_movies_from_tmdb(list_config):
                     if movie.get('adult', False):
                         continue
 
+                    if str(movie['id']) in ignore_list:
+                        continue
+
                     if exclude_terms:
                         movie_title_lower = movie.get('title', '').lower()
                         excluded = False
@@ -239,7 +291,7 @@ def get_movies_from_tmdb(list_config):
                             elif credits_response.status_code == 429:
                                 print("TMDB rate limit hit while checking credits")
                         except Exception as e:
-                            print(f"Error checking credits: {e}")
+                            print(f"Error checking credits: {safe_error(e)}")
                         
                         if has_excluded:
                             continue
@@ -256,7 +308,7 @@ def get_movies_from_tmdb(list_config):
                 print(f"TMDB API Error: Status {response.status_code}")
                 break
         except Exception as e:
-            print(f"Error fetching movies: {e}")
+            print(f"Error fetching movies: {safe_error(e)}")
             break
     
     return movies[:max_results]
@@ -294,7 +346,10 @@ def search_movies_by_title(list_config, title_query):
                 for movie in results:
                     if movie.get('adult', False):
                         continue
-                    
+
+                    if str(movie['id']) in ignore_list:
+                        continue
+
                     movie_title_lower = movie.get('title', '').lower()
                     
                     if exclude_terms:
@@ -346,7 +401,7 @@ def search_movies_by_title(list_config, title_query):
                         elif details_response.status_code == 429:
                             print("TMDB rate limit hit while checking runtime")
                     except Exception as e:
-                        print(f"Error checking runtime: {e}")
+                        print(f"Error checking runtime: {safe_error(e)}")
                     
                     if excluded_actor_ids:
                         has_excluded = False
@@ -367,7 +422,7 @@ def search_movies_by_title(list_config, title_query):
                             elif credits_response.status_code == 429:
                                 print("TMDB rate limit hit while checking credits")
                         except Exception as e:
-                            print(f"Error checking credits: {e}")
+                            print(f"Error checking credits: {safe_error(e)}")
                         
                         if has_excluded:
                             continue
@@ -383,7 +438,7 @@ def search_movies_by_title(list_config, title_query):
             else:
                 break
         except Exception as e:
-            print(f"Error searching movies: {e}")
+            print(f"Error searching movies: {safe_error(e)}")
             break
 
     print(f" ✓ {len(movies)} Movies - Title Search")
@@ -459,7 +514,7 @@ def api_search_company():
         elif response.status_code == 429:
             print("TMDB rate limit hit while searching company")
     except Exception as e:
-        print(f"Error searching company: {e}")
+        print(f"Error searching company: {safe_error(e)}")
     return jsonify([])
 
 @app.route('/api/preview-list', methods=['POST'])
@@ -592,7 +647,8 @@ def get_lists():
 
 @app.route('/api/list-count/<list_id>')
 def get_list_count(list_id):
-    count = len(movie_cache.get(list_id, []))
+    movies = movie_cache.get(list_id, [])
+    count = sum(1 for movie in movies if str(movie['id']) not in ignore_list)
     return jsonify({'count': count})
 
 @app.route('/view/<list_id>')
@@ -601,7 +657,7 @@ def view_list(list_id):
         return "List not found", 404
     
     list_config = movie_lists[list_id]
-    movies = movie_cache.get(list_id, [])
+    movies = [m for m in movie_cache.get(list_id, []) if str(m['id']) not in ignore_list]
     
     sorted_movies = sorted(movies, key=lambda m: m.get('release_date', ''))
     safe_name = html.escape(list_config['name'])
@@ -701,7 +757,7 @@ def force_refresh_cache():
         print("=" * 60)
         return jsonify({'success': True})
     except Exception as e:
-        print(f"Error refreshing cache: {e}")
+        print(f"Error refreshing cache: {safe_error(e)}")
         return jsonify({'success': False, 'error': str(e)})
 
 @app.route('/api/master-list')
@@ -724,15 +780,89 @@ def get_master_list():
                 all_movies[movie['id']] = movie
     
     radarr_list = []
+    skipped_ignored = 0
     for movie in all_movies.values():
+        # Safety net: filters out anything added to the ignore list after
+        # this movie was cached, without waiting for the next refresh.
+        if str(movie['id']) in ignore_list:
+            skipped_ignored += 1
+            continue
         radarr_list.append({
             'id': movie['id']
         })
 
     print("=" * 28)
-    print(f" {len(radarr_list)} Total")
+    print(f" {len(radarr_list)} Total ({skipped_ignored} ignored)")
     print("=" * 60)
     return jsonify(radarr_list)
+
+@app.route('/api/ignore-list')
+def get_ignore_list():
+    with state_lock:
+        return jsonify(ignore_list)
+
+@app.route('/api/ignore-list/<tmdb_id>', methods=['DELETE'])
+def remove_ignored(tmdb_id):
+    with state_lock:
+        if tmdb_id in ignore_list:
+            del ignore_list[tmdb_id]
+            save_ignore_list(ignore_list)
+    return jsonify({'success': True})
+
+@app.route('/api/ignore-list/clear', methods=['POST'])
+def clear_ignore_list():
+    with state_lock:
+        ignore_list.clear()
+        save_ignore_list(ignore_list)
+    return jsonify({'success': True})
+
+@app.route('/api/import-radarr-exclusions', methods=['POST'])
+def import_radarr_exclusions():
+    data = request.json or {}
+    radarr_url = (data.get('radarr_url') or '').strip().rstrip('/')
+    api_key = (data.get('api_key') or '').strip()
+
+    if not radarr_url or not api_key:
+        return jsonify({'success': False, 'error': 'Radarr URL and API key are required'}), 400
+
+    # The key is used for this single outbound request only; it is never
+    # written to disk, an env var, or logged.
+    try:
+        response = requests.get(
+            f"{radarr_url}/api/v3/exclusions",
+            params={'apikey': api_key},
+            timeout=15
+        )
+    except requests.exceptions.RequestException as e:
+        return jsonify({'success': False, 'error': f'Could not reach Radarr: {safe_error(e)}'}), 502
+
+    if response.status_code == 401:
+        return jsonify({'success': False, 'error': 'Radarr rejected the API key'}), 401
+    if response.status_code != 200:
+        return jsonify({'success': False, 'error': f'Radarr returned status {response.status_code}'}), 502
+
+    try:
+        exclusions = response.json()
+    except ValueError:
+        return jsonify({'success': False, 'error': 'Radarr response was not valid JSON'}), 502
+
+    if not isinstance(exclusions, list):
+        return jsonify({'success': False, 'error': 'Unexpected response format from Radarr'}), 502
+
+    imported = 0
+    with state_lock:
+        for item in exclusions:
+            tmdb_id = item.get('tmdbId')
+            if not tmdb_id:
+                continue
+            ignore_list[str(tmdb_id)] = {
+                'title': item.get('movieTitle', ''),
+                'year': item.get('movieYear', '')
+            }
+            imported += 1
+        save_ignore_list(ignore_list)
+
+    return jsonify({'success': True, 'imported': imported, 'total': len(ignore_list)})
 
 if __name__ == '__main__':
     print("=" * 60)
