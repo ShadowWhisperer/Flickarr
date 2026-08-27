@@ -21,12 +21,12 @@
                 <div>
                     <button class="btn-new" onclick="showFormScreen()">+ New List</button>
                     <button class="btn-refresh" onclick="refreshCache()">Update</button>
+                    <button class="btn-refresh btn-ignore" onclick="showIgnoreScreen()">Ignore List</button>
                     <span id="apiStatus"></span>
                 </div>
             </div>
 
             <div class="saved-lists">
-                <h2>Saved Lists</h2>
                 <div id="listContainer"></div>
             </div>
         </div>
@@ -116,6 +116,33 @@
 
             <div class="preview-results" id="previewResults" style="display: none;">
                 <div id="previewList"></div>
+            </div>
+        </div>
+
+        <!-- Ignore List Screen -->
+        <div id="ignore-screen" style="display: none;">
+            <button class="back-button" onclick="showMainScreen()">← Back</button>
+
+            <div class="form-row">
+                <label for="radarrUrl">Radarr URL:</label>
+                <input type="text" id="radarrUrl" placeholder="http://192.168.1.10:7878">
+            </div>
+            <div class="form-row">
+                <label for="radarrApiKey">Radarr API Key:</label>
+                <input type="password" id="radarrApiKey" placeholder="Settings → General → Security">
+            </div>
+            <div class="button-group">
+                <button type="button" class="btn-preview btn-sm" onclick="importRadarrExclusions()">Import from Radarr</button>
+                <span class="preview-status" id="importStatus"></span>
+            </div>
+            <p style="color: #999; font-size: 0.85em;">Your API key is sent with this request and is not stored.</p>
+
+            <div class="saved-lists" style="margin-top: 24px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h2>Ignored Movies (<span id="ignoreCount">0</span>)</h2>
+                    <button class="btn-delete btn-sm" onclick="clearIgnoreList()">Clear All</button>
+                </div>
+                <div id="ignoreContainer"></div>
             </div>
         </div>
     </div>
