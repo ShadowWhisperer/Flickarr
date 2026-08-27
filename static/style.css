@@ -1,437 +1,657 @@
-* {
-    box-sizing: border-box;
-}
-
-body {
-    font-family: Arial, sans-serif;
-    max-width: 900px;
-    margin: 10px auto;
-    padding: 20px;
-    background-color: #f5f5f5;
-}
-
-.container {
-    background: white;
-    padding: 30px;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.form-and-preview {
-    display: flex;
-    gap: 30px;
-}
-
-.form-column {
-    flex: 1;
-}
-
-.preview-column {
-    flex: 0 0 400px;
-    position: sticky;
-    top: 20px;
-    align-self: flex-start;
-}
-
-h1 {
-    color: #333;
-    margin-bottom: 30px;
-}
-
-.back-button {
-    background-color: #666;
-    color: white;
-    padding: 8px 16px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 14px;
-    margin-bottom: 20px;
-}
-
-.form-row {
-    display: flex;
-    align-items: center;
-    margin-bottom: 15px;
-    gap: 15px;
-}
-
-.form-row label {
-    min-width: 150px;
-    font-weight: bold;
-    color: #555;
-}
-
-.form-row input[type="text"], 
-.form-row input[type="number"],
-.form-row select {
-    flex: 1;
-    padding: 8px 12px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 14px;
-}
-
-.form-row input::placeholder {
-    color: #999;
-}
-
-.two-inputs {
-    display: flex;
-    gap: 10px;
-    flex: 1;
-}
-
-.two-inputs input {
-    flex: 1;
-}
-
-.genre-section {
-    margin-bottom: 20px;
-}
-
-.genre-section:first-of-type {
-    margin-top: 30px;
-}
-
-.genre-section > label {
-    display: block;
-    font-weight: bold;
-    color: #555;
-    margin-bottom: 10px;
-    text-align: center;
-    font-size: 16px;
-}
-
-.genre-buttons {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    justify-content: center;
-}
-
-.genre-btn {
-    padding: 8px 12px;
-    border: 2px solid #ddd;
-    background: white;
-    color: #333;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 13px;
-    transition: none;
-    text-align: center;
-}
-
-.genre-btn.included {
-    background-color: #4CAF50;
-    color: white;
-    border-color: #4CAF50;
-}
-
-.genre-btn.excluded {
-    background-color: #f44336;
-    color: white;
-    border-color: #f44336;
-}
-
-.language-section {
-    margin-bottom: 20px;
-}
-
-.language-section > label {
-    display: block;
-    font-weight: bold;
-    color: #555;
-    margin-bottom: 10px;
-}
-
-.language-buttons {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-}
-
-.lang-btn {
-    padding: 6px 12px;
-    border: 2px solid #ddd;
-    background: white;
-    color: #333;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 13px;
-    transition: none;
-}
-
-.lang-btn.selected {
-    background-color: #2196F3;
-    color: white;
-    border-color: #2196F3;
-}
-
-.actor-section {
-    margin-bottom: 20px;
-}
-
-.actor-section > label {
-    display: block;
-    font-weight: bold;
-    color: #555;
-    margin-bottom: 10px;
-}
-
-.autocomplete {
-    position: relative;
-    width: 100%;
-}
-
-.autocomplete input[type="text"] {
-    width: 100%;
-    padding: 10px 12px;
-    font-size: 15px;
-}
-
-.autocomplete-items {
-    position: absolute;
-    border: 1px solid #ddd;
-    border-top: none;
-    z-index: 99;
-    top: 100%;
-    left: 0;
-    right: 0;
-    max-height: 200px;
-    overflow-y: auto;
-    background-color: white;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.autocomplete-item {
-    padding: 10px;
-    cursor: pointer;
-    border-bottom: 1px solid #f0f0f0;
-}
-
-.autocomplete-item:last-child {
-    border-bottom: none;
-}
-
-.autocomplete-item:hover {
-    background-color: #e9e9e9;
-}
-
-.actor-tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-bottom: 10px;
-}
-
-.actor-tag {
-    background-color: #2196F3;
-    color: white;
-    padding: 5px 10px;
-    border-radius: 15px;
-    font-size: 13px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.actor-tag.exclude {
-    background-color: #f44336;
-}
-
-.actor-tag .remove {
-    cursor: pointer;
-    font-weight: bold;
-}
-
-button {
-    background-color: #4CAF50;
-    color: white;
-    padding: 12px 30px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 16px;
-    margin-top: 20px;
-    transition: none;
-}
-
-.button-group {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-}
-
-.btn-preview {
-    background-color: #2196F3;
-    position: relative;
-}
-
-.btn-refresh {
-    background-color: #9C27B0;
-    margin-left: 10px;
-}
-
-.preview-count {
-    display: inline-block;
-    margin-left: 10px;
-    color: #666;
-    font-size: 14px;
-}
-
-.preview-status {
-    display: inline-block;
-    margin-left: 10px;
-    color: #FF9800;
-    font-size: 14px;
-    font-style: italic;
-}
-
-.preview-results {
-    padding: 20px;
-    background-color: #f9f9f9;
-    border-radius: 4px;
-    max-height: 80vh;
-    overflow-y: auto;
-}
-
-.preview-results h3 {
-    margin-top: 0;
-    color: #333;
-}
-
-.movie-item {
-    padding: 10px;
-    border-bottom: 1px solid #eee;
-    display: flex;
-    justify-content: space-between;
-}
-
-.movie-item:last-child {
-    border-bottom: none;
-}
-
-.movie-title {
-    font-weight: bold;
-}
-
-.movie-year {
-    color: #666;
-}
-
-.saved-lists {
-    margin-top: 20px;
-}
-
-.list-item {
-    background: #f9f9f9;
-    padding: 12px;
-    margin-bottom: 7px;
-    border-radius: 4px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.list-item.disabled {
-    opacity: 0.5;
-}
-
-.list-info {
-    flex: 1;
-}
-
-.list-name {
-    font-size: 14px;
-    color: #333;
-}
-
-.name-bold {
-    font-weight: bold;
-}
-
-.movie-count-small {
-    font-size: 12px;
-    color: #666;
-}
-
-.list-details {
-    font-size: 12px;
-    color: #777;
-    margin-top: 5px;
-}
-
-.list-actions {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-}
-
-.list-actions button {
-    padding: 6px 12px;
-    font-size: 13px;
-    margin: 0;
-}
-
-.list-actions input[type="checkbox"] {
-    width: 20px;
-    height: 20px;
-    cursor: pointer;
-}
-
-.btn-edit {
-    background-color: #2196F3;
-}
-
-.btn-view {
-    background-color: #00BCD4;
-}
-
-.btn-delete {
-    background-color: #f44336;
-}
-
-.btn-new {
-    background-color: #4CAF50;
-    padding: 12px 24px;
-    font-size: 16px;
-}
-
-.feed-url {
-    background-color: #e3f2fd;
-    padding: 15px;
-    border-radius: 4px;
-    margin-bottom: 20px;
-}
-
-.feed-url code {
-    background-color: #bbdefb;
-    padding: 5px 10px;
-    border-radius: 3px;
-    display: block;
-    margin-top: 10px;
-    word-break: break-all;
-}
-
-#main-screen, #form-screen {
-    display: none;
-}
-
-.api-status {
-    display: inline-block;
-    padding: 4px 8px;
-    border-radius: 3px;
-    font-size: 12px;
-    margin-left: 10px;
-}
-
-.api-status.success {
-    background-color: #4CAF50;
-    color: white;
-}
-
-.api-status.error {
-    background-color: #f44336;
-    color: white;
-}
+// Data and configuration
+const genres = [
+    {id: '28', name: 'Action'},
+    {id: '12', name: 'Adventure'},
+    {id: '16', name: 'Animation'},
+    {id: '35', name: 'Comedy'},
+    {id: '80', name: 'Crime'},
+    {id: '99', name: 'Documentary'},
+    {id: '18', name: 'Drama'},
+    {id: '10751', name: 'Family'},
+    {id: '14', name: 'Fantasy'},
+    {id: '36', name: 'History'},
+    {id: '27', name: 'Horror'},
+    {id: '10402', name: 'Music'},
+    {id: '9648', name: 'Mystery'},
+    {id: '10749', name: 'Romance'},
+    {id: '878', name: 'Sci-Fi'},
+    {id: '10770', name: 'TV Movie'},
+    {id: '53', name: 'Thriller'},
+    {id: '10752', name: 'War'},
+    {id: '37', name: 'Western'}
+];
+
+let selectedActors = [];
+let excludedActors = [];
+let selectedStudios = [];
+let searchTimeout;
+
+// Escapes text for safe insertion into innerHTML
+function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str == null ? '' : String(str);
+    return div.innerHTML;
+}
+
+// Initialize
+document.getElementById('masterUrl').textContent = window.location.origin + '/api/master-list';
+
+// Load last updated timestamp
+async function loadLastUpdated() {
+    try {
+        const response = await fetch('/api/metadata');
+        const data = await response.json();
+        let displayText = 'Never';
+        if (data.lastUpdated) {
+            const date = new Date(data.lastUpdated);
+            const dateStr = date.toLocaleDateString();
+            const timeStr = date.toLocaleTimeString();
+            const count = data.totalMovies || 0;
+            displayText = `${count} Movies - ${dateStr}  ${timeStr}`;
+        }
+        document.getElementById('lastUpdated').textContent = displayText;
+    } catch (e) {
+        console.error('Error loading metadata:', e);
+    }
+}
+
+// Refresh cache function
+async function refreshCache() {
+    const statusEl = document.getElementById('apiStatus');
+    statusEl.textContent = 'Refreshing cache...';
+    statusEl.className = 'api-status';
+    
+    try {
+        const response = await fetch('/api/refresh-cache', { method: 'POST' });
+        const result = await response.json();
+        
+        if (result.success) {
+            statusEl.textContent = '✓ Cache Refreshed';
+            statusEl.className = 'api-status success';
+            loadLastUpdated();
+            loadLists();  // Reload lists to update counts
+        } else {
+            statusEl.textContent = '✗ Refresh Error: ' + result.error;
+            statusEl.className = 'api-status error';
+        }
+        
+        setTimeout(() => {
+            statusEl.textContent = '';
+            statusEl.className = '';
+        }, 5000);
+    } catch (error) {
+        statusEl.textContent = '✗ Connection Error';
+        statusEl.className = 'api-status error';
+        setTimeout(() => {
+            statusEl.textContent = '';
+            statusEl.className = '';
+        }, 5000);
+    }
+}
+
+// Initialize genre buttons
+function initGenreButtons() {
+    const includeContainer = document.getElementById('includeGenres');
+    const excludeContainer = document.getElementById('excludeGenres');
+    
+    genres.forEach(genre => {
+        const includeBtn = document.createElement('button');
+        includeBtn.type = 'button';
+        includeBtn.className = 'genre-btn';
+        includeBtn.textContent = genre.name;
+        includeBtn.dataset.id = genre.id;
+        includeBtn.onclick = () => toggleGenre(genre.id, 'include');
+        includeContainer.appendChild(includeBtn);
+
+        const excludeBtn = document.createElement('button');
+        excludeBtn.type = 'button';
+        excludeBtn.className = 'genre-btn';
+        excludeBtn.textContent = genre.name;
+        excludeBtn.dataset.id = genre.id;
+        excludeBtn.onclick = () => toggleGenre(genre.id, 'exclude');
+        
+        // Default excluded genres
+        if (['99', '10402', '10770', '16'].includes(genre.id)) {
+            excludeBtn.classList.add('excluded');
+        }
+        
+        excludeContainer.appendChild(excludeBtn);
+    });
+}
+
+function toggleGenre(genreId, type) {
+    const includeBtn = document.querySelector(`#includeGenres .genre-btn[data-id="${genreId}"]`);
+    const excludeBtn = document.querySelector(`#excludeGenres .genre-btn[data-id="${genreId}"]`);
+    
+    if (type === 'include') {
+        if (includeBtn.classList.contains('included')) {
+            includeBtn.classList.remove('included');
+        } else {
+            includeBtn.classList.add('included');
+            excludeBtn.classList.remove('excluded');
+        }
+    } else {
+        if (excludeBtn.classList.contains('excluded')) {
+            excludeBtn.classList.remove('excluded');
+        } else {
+            excludeBtn.classList.add('excluded');
+            includeBtn.classList.remove('included');
+        }
+    }
+}
+
+// Setup actor autocomplete
+function setupActorAutocomplete(inputId, listId, actorArray, isExclude = false) {
+    document.getElementById(inputId).addEventListener('input', function(e) {
+        clearTimeout(searchTimeout);
+        const query = e.target.value.trim();
+        
+        if (query.length < 2) {
+            document.getElementById(listId).innerHTML = '';
+            return;
+        }
+
+        searchTimeout = setTimeout(async () => {
+            try {
+                const response = await fetch(`/api/search-person?q=${encodeURIComponent(query)}`);
+                const results = await response.json();
+                
+                const container = document.getElementById(listId);
+                container.innerHTML = '';
+                
+                results.forEach(person => {
+                    const div = document.createElement('div');
+                    div.className = 'autocomplete-item';
+                    div.textContent = `${person.name} [${person.id}]`;
+                    div.onclick = function() {
+                        if (isExclude) {
+                            if (!excludedActors.find(a => a.id === person.id)) {
+                                excludedActors.push(person);
+                                renderActors();
+                            }
+                            document.getElementById('excludeActorSearch').value = '';
+                            document.getElementById('exclude-autocomplete-list').innerHTML = '';
+                        } else {
+                            if (!selectedActors.find(a => a.id === person.id)) {
+                                selectedActors.push(person);
+                                renderActors();
+                            }
+                            document.getElementById('actorSearch').value = '';
+                            document.getElementById('autocomplete-list').innerHTML = '';
+                        }
+                    };
+                    container.appendChild(div);
+                });
+            } catch (error) {
+                console.error('Search error:', error);
+            }
+        }, 300);
+    });
+}
+
+// Setup studio autocomplete
+function setupStudioAutocomplete() {
+    document.getElementById('studioSearch').addEventListener('input', function(e) {
+        clearTimeout(searchTimeout);
+        const query = e.target.value.trim();
+        
+        if (query.length < 2) {
+            document.getElementById('studio-autocomplete-list').innerHTML = '';
+            return;
+        }
+
+        searchTimeout = setTimeout(async () => {
+            try {
+                const response = await fetch(`/api/search-company?q=${encodeURIComponent(query)}`);
+                const results = await response.json();
+                
+                const container = document.getElementById('studio-autocomplete-list');
+                container.innerHTML = '';
+                
+                results.forEach(company => {
+                    const div = document.createElement('div');
+                    div.className = 'autocomplete-item';
+                    div.textContent = `${company.name} [${company.id}]`;
+                    div.onclick = function() {
+                        if (!selectedStudios.find(s => s.id === company.id)) {
+                            selectedStudios.push(company);
+                            renderStudios();
+                        }
+                        document.getElementById('studioSearch').value = '';
+                        document.getElementById('studio-autocomplete-list').innerHTML = '';
+                    };
+                    container.appendChild(div);
+                });
+            } catch (error) {
+                console.error('Search error:', error);
+            }
+        }, 300);
+    });
+}
+
+function removeActor(personId, isExclude) {
+    if (isExclude) {
+        excludedActors = excludedActors.filter(a => a.id !== personId);
+    } else {
+        selectedActors = selectedActors.filter(a => a.id !== personId);
+    }
+    renderActors();
+}
+
+function renderActors() {
+    const includeContainer = document.getElementById('selectedActors');
+    const excludeContainer = document.getElementById('excludedActors');
+    
+    includeContainer.innerHTML = '';
+    selectedActors.forEach(actor => {
+        const tag = document.createElement('div');
+        tag.className = 'actor-tag';
+        const removeBtn = document.createElement('span');
+        removeBtn.className = 'remove';
+        removeBtn.textContent = '×';
+        removeBtn.onclick = () => removeActor(actor.id, false);
+        tag.innerHTML = `${escapeHtml(actor.name)} [${escapeHtml(actor.id)}] `;
+        tag.appendChild(removeBtn);
+        includeContainer.appendChild(tag);
+    });
+    
+    excludeContainer.innerHTML = '';
+    excludedActors.forEach(actor => {
+        const tag = document.createElement('div');
+        tag.className = 'actor-tag exclude';
+        const removeBtn = document.createElement('span');
+        removeBtn.className = 'remove';
+        removeBtn.textContent = '×';
+        removeBtn.onclick = () => removeActor(actor.id, true);
+        tag.innerHTML = `${escapeHtml(actor.name)} [${escapeHtml(actor.id)}] `;
+        tag.appendChild(removeBtn);
+        excludeContainer.appendChild(tag);
+    });
+}
+
+function renderStudios() {
+    const container = document.getElementById('selectedStudios');
+    container.innerHTML = '';
+    selectedStudios.forEach(studio => {
+        const tag = document.createElement('div');
+        tag.className = 'actor-tag';
+        const removeBtn = document.createElement('span');
+        removeBtn.className = 'remove';
+        removeBtn.textContent = '×';
+        removeBtn.onclick = () => removeStudio(studio.id);
+        tag.innerHTML = `${escapeHtml(studio.name)} [${escapeHtml(studio.id)}] `;
+        tag.appendChild(removeBtn);
+        container.appendChild(tag);
+    });
+}
+
+function removeStudio(studioId) {
+    selectedStudios = selectedStudios.filter(s => s.id !== studioId);
+    renderStudios();
+}
+
+// Form submission
+document.getElementById('listForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const includeGenres = Array.from(document.querySelectorAll('#includeGenres .genre-btn.included'))
+        .map(btn => btn.dataset.id);
+    const excludeGenres = Array.from(document.querySelectorAll('#excludeGenres .genre-btn.excluded'))
+        .map(btn => btn.dataset.id);
+    
+    const data = {
+        name: document.getElementById('listName').value,
+        minRating: parseFloat(document.getElementById('minRating').value) || null,
+        minVotes: parseInt(document.getElementById('minVotes').value) || null,
+        yearFrom: parseInt(document.getElementById('yearFrom').value) || null,
+        yearTo: parseInt(document.getElementById('yearTo').value) || null,
+        includeGenres: includeGenres,
+        excludeGenres: excludeGenres,
+        titleTerms: document.getElementById('titleTerms').value,
+        titleExclude: document.getElementById('titleExclude').value,
+        studios: selectedStudios,
+        actors: selectedActors,
+        excludeActors: excludedActors
+    };
+
+    const editingId = document.getElementById('editingListId').value;
+    const url = editingId ? `/api/update-list/${editingId}` : '/api/create-list';
+    const method = editingId ? 'PUT' : 'POST';
+
+    try {
+        const response = await fetch(url, {
+            method: method,
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        });
+
+        const result = await response.json();
+        
+        if (result.success) {
+            showMainScreen();
+            loadLists();
+        } else {
+            alert('Error: ' + (result.error || 'Unknown error'));
+        }
+    } catch (error) {
+        alert('Error: ' + error.message);
+    }
+});
+
+// Preview list
+async function previewList() {
+    const includeGenres = Array.from(document.querySelectorAll('#includeGenres .genre-btn.included'))
+        .map(btn => btn.dataset.id);
+    const excludeGenres = Array.from(document.querySelectorAll('#excludeGenres .genre-btn.excluded'))
+        .map(btn => btn.dataset.id);
+    
+    const data = {
+        minRating: parseFloat(document.getElementById('minRating').value) || null,
+        minVotes: parseInt(document.getElementById('minVotes').value) || null,
+        yearFrom: parseInt(document.getElementById('yearFrom').value) || null,
+        yearTo: parseInt(document.getElementById('yearTo').value) || null,
+        includeGenres: includeGenres,
+        excludeGenres: excludeGenres,
+        titleTerms: document.getElementById('titleTerms').value,
+        titleExclude: document.getElementById('titleExclude').value,
+        studios: selectedStudios,
+        actors: selectedActors,
+        excludeActors: excludedActors
+    };
+
+    // Show updating status
+    document.getElementById('previewStatus').textContent = 'Updating list...';
+    document.getElementById('previewCount').textContent = '';
+    document.getElementById('previewResults').style.display = 'none';
+
+    try {
+        const response = await fetch('/api/preview-list', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        });
+
+        const result = await response.json();
+        const movies = result.movies;
+        const totalCount = result.totalCount;
+        
+        movies.sort((a, b) => {
+            const yearA = a.year || '0';
+            const yearB = b.year || '0';
+            return yearA.localeCompare(yearB);
+        });
+
+        // Clear updating status and show count
+        document.getElementById('previewStatus').textContent = '';
+        document.getElementById('previewCount').textContent = `(${totalCount} movies)`;
+        
+        const listHtml = movies.map(movie => `
+            <div class="movie-item">
+                <span class="movie-title">${escapeHtml(movie.title)}</span>
+                <span class="movie-year">${escapeHtml(movie.year)}</span>
+            </div>
+        `).join('');
+        
+        document.getElementById('previewList').innerHTML = listHtml;
+        document.getElementById('previewResults').style.display = 'block';
+    } catch (error) {
+        document.getElementById('previewStatus').textContent = '';
+        alert('Error loading preview: ' + error.message);
+    }
+}
+
+// Screen navigation
+function showMainScreen() {
+    document.getElementById('main-screen').style.display = 'block';
+    document.getElementById('form-screen').style.display = 'none';
+    document.getElementById('ignore-screen').style.display = 'none';
+    loadLastUpdated();
+    resetForm();
+}
+
+function showFormScreen(editId = null) {
+    document.getElementById('main-screen').style.display = 'none';
+    document.getElementById('form-screen').style.display = 'block';
+    document.getElementById('ignore-screen').style.display = 'none';
+    
+    if (editId) {
+        editList(editId);
+    }
+}
+
+function showIgnoreScreen() {
+    document.getElementById('main-screen').style.display = 'none';
+    document.getElementById('form-screen').style.display = 'none';
+    document.getElementById('ignore-screen').style.display = 'block';
+    document.getElementById('importStatus').textContent = '';
+    loadIgnoreList();
+}
+
+function resetForm() {
+    document.getElementById('listForm').reset();
+    document.getElementById('editingListId').value = '';
+    document.getElementById('submitBtn').textContent = 'Save';
+    document.getElementById('previewResults').style.display = 'none';
+    document.getElementById('previewCount').textContent = '';
+    selectedActors = [];
+    excludedActors = [];
+    selectedStudios = [];
+    renderActors();
+    renderStudios();
+    
+    document.querySelectorAll('.genre-btn').forEach(btn => {
+        btn.classList.remove('included', 'excluded');
+    });
+    
+    // Reset to default excluded genres
+    ['99', '10402', '10770', '16'].forEach(genreId => {
+        const btn = document.querySelector(`#excludeGenres .genre-btn[data-id="${genreId}"]`);
+        if (btn) btn.classList.add('excluded');
+    });
+}
+
+// Load lists
+async function loadLists() {
+    const response = await fetch('/api/lists');
+    const lists = await response.json();
+    
+    const container = document.getElementById('listContainer');
+    
+    if (Object.keys(lists).length === 0) {
+        container.innerHTML = '<p style="color: #999;">No lists created yet. Click "New List" to get started!</p>';
+        return;
+    }
+    
+    const sortedEntries = Object.entries(lists).sort((a, b) => 
+        a[1].name.localeCompare(b[1].name)
+    );
+
+    // Fetch every count before rendering anything, instead of rendering
+    // placeholders and patching counts in as each fetch resolves - that
+    // patch-in approach missed newly created lists in some cases.
+    const counts = await Promise.all(
+        sortedEntries.map(([id]) =>
+            fetch(`/api/list-count/${id}`)
+                .then(r => r.json())
+                .then(data => data.count)
+                .catch(() => 0)
+        )
+    );
+
+    container.innerHTML = '';
+
+    sortedEntries.forEach(([id, list], index) => {
+        const div = document.createElement('div');
+        div.className = 'list-item' + (list.enabled === false ? ' disabled' : '');
+
+        div.innerHTML = `
+            <div class="list-info">
+                <div class="list-name">
+                    <span class="name-bold">${escapeHtml(list.name)}</span> - <span class="movie-count-small">${counts[index]}</span>
+                </div>
+            </div>
+            <div class="list-actions">
+                <input type="checkbox" ${list.enabled !== false ? 'checked' : ''} title="Enable/Disable">
+                <button class="btn-view">View</button>
+                <button class="btn-edit">Edit</button>
+                <button class="btn-delete">Delete</button>
+            </div>
+        `;
+
+        // Bind events via data reference instead of interpolating the id into
+        // inline handler strings, which prevents attribute/JS injection via
+        // crafted list names or ids.
+        div.querySelector('input[type="checkbox"]').addEventListener('change', () => toggleList(id));
+        div.querySelector('.btn-view').addEventListener('click', () => viewList(id));
+        div.querySelector('.btn-edit').addEventListener('click', () => showFormScreen(id));
+        div.querySelector('.btn-delete').addEventListener('click', () => deleteList(id));
+
+        container.appendChild(div);
+    });
+}
+
+async function toggleList(id) {
+    await fetch(`/api/toggle-list/${id}`, {method: 'POST'});
+    loadLists();
+}
+
+async function deleteList(id) {
+    if (confirm('Are you sure you want to delete this list?')) {
+        await fetch(`/api/delete-list/${id}`, {method: 'DELETE'});
+        loadLists();
+    }
+}
+
+function viewList(id) {
+    window.open(`/view/${id}`, '_blank');
+}
+
+async function editList(id) {
+    const response = await fetch(`/api/lists`);
+    const lists = await response.json();
+    const list = lists[id];
+    
+    document.getElementById('editingListId').value = id;
+    document.getElementById('listName').value = list.name;
+    document.getElementById('minRating').value = list.minRating || '';
+    document.getElementById('minVotes').value = list.minVotes || '';
+    document.getElementById('yearFrom').value = list.yearFrom || '';
+    document.getElementById('yearTo').value = list.yearTo || '';
+    document.getElementById('titleTerms').value = list.titleTerms || '';
+    document.getElementById('titleExclude').value = list.titleExclude || '';
+    
+    selectedActors = list.actors || [];
+    excludedActors = list.excludeActors || [];
+    selectedStudios = list.studios || [];
+    renderActors();
+    renderStudios();
+    
+    document.querySelectorAll('.genre-btn').forEach(btn => {
+        btn.classList.remove('included', 'excluded');
+    });
+    
+    (list.includeGenres || []).forEach(genreId => {
+        const btn = document.querySelector(`#includeGenres .genre-btn[data-id="${genreId}"]`);
+        if (btn) btn.classList.add('included');
+    });
+    
+    (list.excludeGenres || []).forEach(genreId => {
+        const btn = document.querySelector(`#excludeGenres .genre-btn[data-id="${genreId}"]`);
+        if (btn) btn.classList.add('excluded');
+    });
+}
+
+// Ignore list
+async function loadIgnoreList() {
+    const response = await fetch('/api/ignore-list');
+    const ignored = await response.json();
+
+    const container = document.getElementById('ignoreContainer');
+    container.innerHTML = '';
+    document.getElementById('ignoreCount').textContent = Object.keys(ignored).length.toLocaleString();
+
+    const sortedEntries = Object.entries(ignored).sort((a, b) =>
+        (a[1].title || '').localeCompare(b[1].title || '')
+    );
+
+    if (sortedEntries.length === 0) {
+        container.innerHTML = '<p style="color: #999;">No ignored movies yet.</p>';
+        return;
+    }
+
+    sortedEntries.forEach(([tmdbId, movie]) => {
+        const div = document.createElement('div');
+        div.className = 'list-item compact';
+
+        div.innerHTML = `
+            <div class="list-info">
+                <div class="list-name">
+                    <span class="name-bold">${escapeHtml(movie.title)}</span> - <span>${escapeHtml(movie.year)}</span>
+                </div>
+            </div>
+            <div class="list-actions">
+                <button class="btn-icon" title="Remove" aria-label="Remove">🗑️</button>
+            </div>
+        `;
+        div.querySelector('.btn-icon').addEventListener('click', () => removeIgnored(tmdbId));
+        container.appendChild(div);
+    });
+}
+
+async function removeIgnored(tmdbId) {
+    await fetch(`/api/ignore-list/${tmdbId}`, { method: 'DELETE' });
+    loadIgnoreList();
+}
+
+async function clearIgnoreList() {
+    if (!confirm('Remove all movies from the ignore list?')) return;
+    await fetch('/api/ignore-list/clear', { method: 'POST' });
+    loadIgnoreList();
+}
+
+async function importRadarrExclusions() {
+    const radarrUrl = document.getElementById('radarrUrl').value.trim();
+    const apiKey = document.getElementById('radarrApiKey').value.trim();
+    const statusEl = document.getElementById('importStatus');
+
+    if (!radarrUrl || !apiKey) {
+        statusEl.textContent = 'Enter both the Radarr URL and API key.';
+        return;
+    }
+
+    statusEl.textContent = 'Importing...';
+
+    try {
+        const response = await fetch('/api/import-radarr-exclusions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ radarr_url: radarrUrl, api_key: apiKey })
+        });
+        const result = await response.json();
+
+        if (result.success) {
+            statusEl.textContent = `Imported ${result.imported} movies. Total ignored: ${result.total}.`;
+            document.getElementById('radarrApiKey').value = '';
+            loadIgnoreList();
+        } else {
+            statusEl.textContent = 'Error: ' + (result.error || 'Unknown error');
+        }
+    } catch (error) {
+        statusEl.textContent = 'Connection error: ' + error.message;
+    }
+}
+
+// Initialize everything
+setupActorAutocomplete('actorSearch', 'autocomplete-list', null, false);
+setupActorAutocomplete('excludeActorSearch', 'exclude-autocomplete-list', null, true);
+setupStudioAutocomplete();
+initGenreButtons();
+
+// Year fields accept up to 3 years out from today, computed at load time
+// instead of a hardcoded year that goes stale.
+const maxYear = new Date().getFullYear() + 3;
+document.getElementById('yearFrom').max = maxYear;
+document.getElementById('yearTo').max = maxYear;
+
+showMainScreen();
+loadLists();
