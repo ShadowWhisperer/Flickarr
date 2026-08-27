@@ -404,6 +404,7 @@ async function previewList() {
 function showMainScreen() {
     document.getElementById('main-screen').style.display = 'block';
     document.getElementById('form-screen').style.display = 'none';
+    document.getElementById('ignore-screen').style.display = 'none';
     loadLastUpdated();
     resetForm();
 }
@@ -411,10 +412,19 @@ function showMainScreen() {
 function showFormScreen(editId = null) {
     document.getElementById('main-screen').style.display = 'none';
     document.getElementById('form-screen').style.display = 'block';
+    document.getElementById('ignore-screen').style.display = 'none';
     
     if (editId) {
         editList(editId);
     }
+}
+
+function showIgnoreScreen() {
+    document.getElementById('main-screen').style.display = 'none';
+    document.getElementById('form-screen').style.display = 'none';
+    document.getElementById('ignore-screen').style.display = 'block';
+    document.getElementById('importStatus').textContent = '';
+    loadIgnoreList();
 }
 
 function resetForm() {
@@ -446,7 +456,6 @@ async function loadLists() {
     const lists = await response.json();
     
     const container = document.getElementById('listContainer');
-    container.innerHTML = '';
     
     if (Object.keys(lists).length === 0) {
         container.innerHTML = '<p style="color: #999;">No lists created yet. Click "New List" to get started!</p>';
@@ -456,25 +465,29 @@ async function loadLists() {
     const sortedEntries = Object.entries(lists).sort((a, b) => 
         a[1].name.localeCompare(b[1].name)
     );
-    
-    sortedEntries.forEach(([id, list]) => {
+
+    // Fetch every count before rendering anything, instead of rendering
+    // placeholders and patching counts in as each fetch resolves - that
+    // patch-in approach missed newly created lists in some cases.
+    const counts = await Promise.all(
+        sortedEntries.map(([id]) =>
+            fetch(`/api/list-count/${id}`)
+                .then(r => r.json())
+                .then(data => data.count)
+                .catch(() => 0)
+        )
+    );
+
+    container.innerHTML = '';
+
+    sortedEntries.forEach(([id, list], index) => {
         const div = document.createElement('div');
         div.className = 'list-item' + (list.enabled === false ? ' disabled' : '');
-        
-        // Get movie count from cache
-        fetch(`/api/list-count/${id}`)
-            .then(r => r.json())
-            .then(data => {
-                const countSpan = div.querySelector('.movie-count-small');
-                if (countSpan) {
-                    countSpan.textContent = `${data.count}`;
-                }
-            });
-        
+
         div.innerHTML = `
             <div class="list-info">
                 <div class="list-name">
-                    <span class="name-bold">${escapeHtml(list.name)}</span> - <span class="movie-count-small">...</span>
+                    <span class="name-bold">${escapeHtml(list.name)}</span> - <span class="movie-count-small">${counts[index]}</span>
                 </div>
             </div>
             <div class="list-actions">
@@ -546,6 +559,86 @@ async function editList(id) {
         const btn = document.querySelector(`#excludeGenres .genre-btn[data-id="${genreId}"]`);
         if (btn) btn.classList.add('excluded');
     });
+}
+
+// Ignore list
+async function loadIgnoreList() {
+    const response = await fetch('/api/ignore-list');
+    const ignored = await response.json();
+
+    const container = document.getElementById('ignoreContainer');
+    container.innerHTML = '';
+    document.getElementById('ignoreCount').textContent = Object.keys(ignored).length.toLocaleString();
+
+    const sortedEntries = Object.entries(ignored).sort((a, b) =>
+        (a[1].title || '').localeCompare(b[1].title || '')
+    );
+
+    if (sortedEntries.length === 0) {
+        container.innerHTML = '<p style="color: #999;">No ignored movies yet.</p>';
+        return;
+    }
+
+    sortedEntries.forEach(([tmdbId, movie]) => {
+        const div = document.createElement('div');
+        div.className = 'list-item compact';
+
+        div.innerHTML = `
+            <div class="list-info">
+                <div class="list-name">
+                    <span class="name-bold">${escapeHtml(movie.title)}</span> - <span>${escapeHtml(movie.year)}</span>
+                </div>
+            </div>
+            <div class="list-actions">
+                <button class="btn-icon" title="Remove" aria-label="Remove">🗑️</button>
+            </div>
+        `;
+        div.querySelector('.btn-icon').addEventListener('click', () => removeIgnored(tmdbId));
+        container.appendChild(div);
+    });
+}
+
+async function removeIgnored(tmdbId) {
+    await fetch(`/api/ignore-list/${tmdbId}`, { method: 'DELETE' });
+    loadIgnoreList();
+}
+
+async function clearIgnoreList() {
+    if (!confirm('Remove all movies from the ignore list?')) return;
+    await fetch('/api/ignore-list/clear', { method: 'POST' });
+    loadIgnoreList();
+}
+
+async function importRadarrExclusions() {
+    const radarrUrl = document.getElementById('radarrUrl').value.trim();
+    const apiKey = document.getElementById('radarrApiKey').value.trim();
+    const statusEl = document.getElementById('importStatus');
+
+    if (!radarrUrl || !apiKey) {
+        statusEl.textContent = 'Enter both the Radarr URL and API key.';
+        return;
+    }
+
+    statusEl.textContent = 'Importing...';
+
+    try {
+        const response = await fetch('/api/import-radarr-exclusions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ radarr_url: radarrUrl, api_key: apiKey })
+        });
+        const result = await response.json();
+
+        if (result.success) {
+            statusEl.textContent = `Imported ${result.imported} movies. Total ignored: ${result.total}.`;
+            document.getElementById('radarrApiKey').value = '';
+            loadIgnoreList();
+        } else {
+            statusEl.textContent = 'Error: ' + (result.error || 'Unknown error');
+        }
+    } catch (error) {
+        statusEl.textContent = 'Connection error: ' + error.message;
+    }
 }
 
 // Initialize everything
