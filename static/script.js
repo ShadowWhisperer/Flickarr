@@ -44,10 +44,10 @@ async function loadLastUpdated() {
         let displayText = 'Never';
         if (data.lastUpdated) {
             const date = new Date(data.lastUpdated);
-            const dateStr = date.toLocaleDateString();
-            const timeStr = date.toLocaleTimeString();
+            const dateStr = `${date.getMonth() + 1}.${date.getDate()}.${date.getFullYear()}`;
+            const timeStr = date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
             const count = data.totalMovies || 0;
-            displayText = `${count} Movies - ${dateStr}  ${timeStr}`;
+            displayText = `${count} Movies - ${dateStr} ${timeStr}`;
         }
         document.getElementById('lastUpdated').textContent = displayText;
     } catch (e) {
@@ -58,7 +58,7 @@ async function loadLastUpdated() {
 // Refresh cache function
 async function refreshCache() {
     const statusEl = document.getElementById('apiStatus');
-    statusEl.textContent = 'Refreshing cache...';
+    statusEl.textContent = 'Updating movies...';
     statusEl.className = 'api-status';
     
     try {
@@ -66,7 +66,7 @@ async function refreshCache() {
         const result = await response.json();
         
         if (result.success) {
-            statusEl.textContent = '✓ Cache Refreshed';
+            statusEl.textContent = '✓ Upated';
             statusEl.className = 'api-status success';
             loadLastUpdated();
             loadLists();  // Reload lists to update counts
@@ -329,7 +329,6 @@ document.getElementById('listForm').addEventListener('submit', async function(e)
         
         if (result.success) {
             showMainScreen();
-            loadLists();
         } else {
             alert('Error: ' + (result.error || 'Unknown error'));
         }
@@ -372,6 +371,7 @@ async function previewList() {
         });
 
         const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Preview failed');
         const movies = result.movies;
         const totalCount = result.totalCount;
         
@@ -383,7 +383,7 @@ async function previewList() {
 
         // Clear updating status and show count
         document.getElementById('previewStatus').textContent = '';
-        document.getElementById('previewCount').textContent = `(${totalCount} movies)`;
+        document.getElementById('previewCount').textContent = `(${totalCount} movies${result.incomplete ? ', incomplete: TMDB error' : ''})`;
         
         const listHtml = movies.map(movie => `
             <div class="movie-item">
@@ -406,6 +406,7 @@ function showMainScreen() {
     document.getElementById('form-screen').style.display = 'none';
     document.getElementById('ignore-screen').style.display = 'none';
     loadLastUpdated();
+    loadLists();
     resetForm();
 }
 
@@ -425,6 +426,7 @@ function showIgnoreScreen() {
     document.getElementById('ignore-screen').style.display = 'block';
     document.getElementById('importStatus').textContent = '';
     loadIgnoreList();
+    loadConfig();  // refreshes the "last import" time
 }
 
 function resetForm() {
@@ -493,8 +495,9 @@ async function loadLists() {
             <div class="list-actions">
                 <input type="checkbox" ${list.enabled !== false ? 'checked' : ''} title="Enable/Disable">
                 <button class="btn-view">View</button>
+                <button class="btn-update">Update</button>
                 <button class="btn-edit">Edit</button>
-                <button class="btn-delete">Delete</button>
+                <button class="btn-icon" title="Delete" aria-label="Delete">🗑️</button>
             </div>
         `;
 
@@ -503,8 +506,9 @@ async function loadLists() {
         // crafted list names or ids.
         div.querySelector('input[type="checkbox"]').addEventListener('change', () => toggleList(id));
         div.querySelector('.btn-view').addEventListener('click', () => viewList(id));
+        div.querySelector('.btn-update').addEventListener('click', (e) => refreshList(id, e.currentTarget));
         div.querySelector('.btn-edit').addEventListener('click', () => showFormScreen(id));
-        div.querySelector('.btn-delete').addEventListener('click', () => deleteList(id));
+        div.querySelector('.btn-icon').addEventListener('click', () => deleteList(id));
 
         container.appendChild(div);
     });
@@ -513,6 +517,7 @@ async function loadLists() {
 async function toggleList(id) {
     await fetch(`/api/toggle-list/${id}`, {method: 'POST'});
     loadLists();
+    loadLastUpdated();
 }
 
 async function deleteList(id) {
@@ -520,6 +525,24 @@ async function deleteList(id) {
         await fetch(`/api/delete-list/${id}`, {method: 'DELETE'});
         loadLists();
     }
+}
+
+async function refreshList(id, btn) {
+    btn.disabled = true;
+    btn.textContent = 'Updating...';
+    try {
+        const response = await fetch(`/api/refresh-list/${id}`, {method: 'POST'});
+        const result = await response.json();
+        if (!result.success) throw new Error(result.error || 'Update failed');
+    } catch (error) {
+        btn.disabled = false;
+        btn.textContent = 'Failed';
+        setTimeout(() => { btn.textContent = 'Update'; }, 3000);
+        return;
+    }
+    // Re-render the rows (new count) and the header total
+    loadLists();
+    loadLastUpdated();
 }
 
 function viewList(id) {
@@ -609,12 +632,40 @@ async function clearIgnoreList() {
     loadIgnoreList();
 }
 
+// Radarr settings from the server's .env (the API key itself is never sent to the browser)
+let radarrConfig = { radarrUrl: '', radarrKeyConfigured: false };
+
+async function loadConfig() {
+    try {
+        const response = await fetch('/api/config');
+        radarrConfig = await response.json();
+    } catch (error) {
+        // Keep defaults: the fields stay visible and can be filled in manually
+    }
+
+    const keyConfigured = radarrConfig.radarrKeyConfigured && radarrConfig.radarrUrl;
+    document.getElementById('radarrUrlRow').style.display = keyConfigured ? 'none' : '';
+    document.getElementById('radarrKeyRow').style.display = keyConfigured ? 'none' : '';
+    document.getElementById('radarrImportRow').style.display = keyConfigured ? 'none' : '';
+
+    const urlInput = document.getElementById('radarrUrl');
+    if (radarrConfig.radarrUrl && !urlInput.value) {
+        urlInput.value = radarrConfig.radarrUrl;
+    }
+
+    document.getElementById('radarrNote').textContent = keyConfigured
+        ? `Exclusions are imported every 12 hours.     ` +
+          (radarrConfig.radarrLastImport ? `Last import: ${new Date(radarrConfig.radarrLastImport).toLocaleString()}.` : 'No import yet.')
+        : 'Your API key is sent with this request and is not stored.';
+}
+
 async function importRadarrExclusions() {
+    const useEnv = radarrConfig.radarrKeyConfigured && radarrConfig.radarrUrl;
     const radarrUrl = document.getElementById('radarrUrl').value.trim();
     const apiKey = document.getElementById('radarrApiKey').value.trim();
     const statusEl = document.getElementById('importStatus');
 
-    if (!radarrUrl || !apiKey) {
+    if (!useEnv && (!radarrUrl || !apiKey)) {
         statusEl.textContent = 'Enter both the Radarr URL and API key.';
         return;
     }
@@ -625,7 +676,7 @@ async function importRadarrExclusions() {
         const response = await fetch('/api/import-radarr-exclusions', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ radarr_url: radarrUrl, api_key: apiKey })
+            body: JSON.stringify(useEnv ? {} : { radarr_url: radarrUrl, api_key: apiKey })
         });
         const result = await response.json();
 
@@ -654,4 +705,4 @@ document.getElementById('yearFrom').max = maxYear;
 document.getElementById('yearTo').max = maxYear;
 
 showMainScreen();
-loadLists();
+loadConfig();
