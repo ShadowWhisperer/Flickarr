@@ -12,7 +12,7 @@ body {
 
 .container {
     background: white;
-    padding: 30px;
+    padding: 20px 30px 30px;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
@@ -35,7 +35,12 @@ body {
 
 h1 {
     color: #333;
+    margin-top: 0;
     margin-bottom: 30px;
+}
+
+h2 {
+    font-size: 1.25em;
 }
 
 .back-button {
@@ -118,11 +123,12 @@ h1 {
 .genre-buttons {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 10px 8px;
     justify-content: center;
 }
 
 .genre-btn {
+    margin-top: 0;  /* the global button rule adds 20px */
     padding: 8px 12px;
     border: 2px solid #ddd;
     background: white;
@@ -188,7 +194,7 @@ h1 {
     display: block;
     font-weight: bold;
     color: #555;
-    margin-bottom: 10px;
+    margin-bottom: 4px;
 }
 
 .autocomplete {
@@ -234,7 +240,12 @@ h1 {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
-    margin-bottom: 10px;
+    margin-bottom: 6px;
+}
+
+/* No reserved space when nothing is selected */
+.actor-tags:empty {
+    display: none;
 }
 
 .actor-tag {
@@ -349,8 +360,8 @@ button {
 
 .list-item {
     background: #f9f9f9;
-    padding: 12px;
-    margin-bottom: 7px;
+    padding: 4px 12px;
+    margin-bottom: 4px;
     border-radius: 4px;
     display: flex;
     justify-content: space-between;
@@ -392,19 +403,28 @@ button {
 
 .list-actions {
     display: flex;
-    gap: 10px;
+    gap: 8px;
     align-items: center;
 }
 
 .list-actions button {
-    padding: 6px 12px;
+    padding: 3px 10px;
     font-size: 13px;
     margin: 0;
 }
 
+.list-actions .btn-icon {
+    padding: 2px 6px;
+}
+
+.list-actions button:disabled {
+    opacity: 0.6;
+    cursor: default;
+}
+
 .list-actions input[type="checkbox"] {
-    width: 20px;
-    height: 20px;
+    width: 16px;
+    height: 16px;
     cursor: pointer;
 }
 
@@ -414,6 +434,10 @@ button {
 
 .btn-view {
     background-color: #00BCD4;
+}
+
+.btn-update {
+    background-color: #9C27B0;
 }
 
 .btn-delete {
@@ -436,6 +460,9 @@ button {
 
 #ignoreContainer {
     margin-top: 15px;
+    max-height: max(250px, calc(100vh - 420px));
+    overflow-y: auto;
+    padding-right: 6px;
 }
 
 .btn-new {
@@ -449,14 +476,14 @@ button {
     padding: 15px;
     border-radius: 4px;
     margin-bottom: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 15px;
 }
 
 .feed-url code {
-    background-color: #bbdefb;
-    padding: 5px 10px;
-    border-radius: 3px;
-    display: block;
-    margin-top: 10px;
+    margin-left: auto;
     word-break: break-all;
 }
 
