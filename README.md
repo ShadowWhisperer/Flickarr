@@ -1,31 +1,19 @@
-<img width="874" height="605" alt="Capture" src="https://github.com/user-attachments/assets/da2e980a-2346-4188-9428-1038b7016606" />
+<img width="879" height="555" alt="Capture" src="https://github.com/user-attachments/assets/8343fbf6-a8a0-4095-830c-7d2fe1d9a6c5" />
 
-Build custom lists for Radarr, using filters (actors, genres, ratings, studios, years).  
-  
+<br /><br />
+Build custom lists for Radarr, using filters (actors, genres, ratings, studios, years). Lists refresh every 6 hours.  
+
+🚨  Do NOT connect this to your WAN. Designed for local access only. You will have problems.  
+
 ### Scans exclude:
  - Adult content  
  - Stand-up comedy  
  - Videos under 45 minutes  
- - Animation, Documentary, Music, TV Movie (can be overridden)  
- - All languages not specified in the compose file  
-
+ - All languages not specified in the .env file  
 
 ### Prerequisites  
 - TMDB API key [HERE](https://www.themoviedb.org/settings/api)
 
-## docker-compose
-```
-TMDB_API_KEY=       Set you API Key
-DEFAULT_LANGUAGES=  Search for only movies in these languages
-TZ=                 Your time zone. Used in the GUI for last upated time.
-user:               ID # of your non-root user.  *Make sure user has permissions to access data dir.
-```
-
-Web Page: `http://localhost:5000`  
-<br />  
-  
-🚨  Do NOT connect this to your WAN. Designed for local access only. You will have problems.  
-  
 ## Radarr Setup  
 1. Create and configure your lists in the web interface at `http://localhost:5000`
 2. Copy the Master List URL from the main screen
@@ -48,4 +36,3 @@ Web Page: `http://localhost:5000`
 - Claude AI
 - Movie data provided by [The Movie Database (TMDB)](https://www.themoviedb.org/)
 - Built for [Radarr](https://github.com/Radarr/Radarr)
-- Inspired by [listrr.pro](https://listrr.pro). *Listrr is far more advanced.
