@@ -3,14 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Flickarr - Movie List Generator</title>
+    <title>Flickarr</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎬</text></svg>">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
     <div class="container">
         <!-- Main Screen -->
         <div id="main-screen">
-            <h1>🎬 Flickarr - TMDB Movie List Generator</h1>
+            <h1>🎬 Flickarr - Movie List Generator</h1>
             
             <div class="feed-url">
                 <strong><span id="lastUpdated">Never</span></strong>
@@ -123,19 +124,19 @@
         <div id="ignore-screen" style="display: none;">
             <button class="back-button" onclick="showMainScreen()">← Back</button>
 
-            <div class="form-row">
+            <div class="form-row" id="radarrUrlRow">
                 <label for="radarrUrl">Radarr URL:</label>
                 <input type="text" id="radarrUrl" placeholder="http://192.168.1.10:7878">
             </div>
-            <div class="form-row">
+            <div class="form-row" id="radarrKeyRow">
                 <label for="radarrApiKey">Radarr API Key:</label>
                 <input type="password" id="radarrApiKey" placeholder="Settings → General → Security">
             </div>
-            <div class="button-group">
+            <div class="button-group" id="radarrImportRow">
                 <button type="button" class="btn-preview btn-sm" onclick="importRadarrExclusions()">Import from Radarr</button>
                 <span class="preview-status" id="importStatus"></span>
             </div>
-            <p style="color: #999; font-size: 0.85em;">Your API key is sent with this request and is not stored.</p>
+            <p id="radarrNote" style="color: #999; font-size: 0.85em;">Your API key is sent with this request and is not stored.</p>
 
             <div class="saved-lists" style="margin-top: 24px;">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
